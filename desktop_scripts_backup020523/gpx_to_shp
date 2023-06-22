@@ -1,0 +1,30 @@
+import gpxpy
+import geopandas as gpd
+from shapely.geometry import Point
+
+# list of GPX file names
+gpx_files = ["file1.gpx", "file2.gpx", "file3.gpx"]
+
+# create an empty list to store the GPX data
+gpx_data = []
+
+# loop through the GPX files
+for gpx_file in gpx_files:
+    # read the GPX file
+    with open(gpx_file, "r") as gpx_f:
+        gpx = gpxpy.parse(gpx_f)
+
+    # loop through the waypoints in the GPX file
+    for wp in gpx.waypoints:
+        # create a dictionary to store the waypoint data
+        waypoint = {"geometry": Point(wp.longitude, wp.latitude),
+                    "elevation": wp.elevation}
+
+        # add the waypoint data to the GPX data list
+        gpx_data.append(waypoint)
+
+# create a GeoDataFrame from the GPX data
+gdf = gpd.GeoDataFrame(gpx_data, geometry="geometry")
+
+# save the GeoDataFrame to a shapefile
+gdf.to_file("waypoints.shp", driver="ESRI Shapefile")

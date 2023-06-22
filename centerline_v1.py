@@ -55,7 +55,7 @@ src = '/mnt/c/Users/shubh/Downloads/trial_farm_bound/dn_value_2_difference_2.shp
 dst = '/mnt/c/Users/shubh/Downloads/trial_farm_bound/dn_value_2_difference_2_cen.shp'
 
 
-shp_file = gpd.read_file(src)
+shp_file = gpd.read_file(src) #should be in 4326
 #split_polygon = divide_in_grid(shp_file)
 polygon_list = list(shp_file.geometry)
 
