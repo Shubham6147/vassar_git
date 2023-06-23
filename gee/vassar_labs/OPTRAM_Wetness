@@ -1,0 +1,368 @@
+var batch = require('users/fitoprincipe/geetools:batch')
+
+var start_Date = ee.Date('2022-12-01');
+var end_Date = ee.Date('2023-04-21');
+
+
+
+// ------ Functions -----------
+var vd_opt = 0.3143
+var vw_opt = 0.083
+var id_opt = 0.5711
+var iw_opt = 0.0406
+
+var sd_opt = vd_opt - id_opt
+var sw_opt = vw_opt - iw_opt
+
+//print(sd_opt, sw_opt)
+
+var addNDVI = function(image) {
+  var ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI');
+  return image.addBands(ndvi);
+};
+
+var cal_str = function(image){
+  var STR = image.expression(
+  '((1.0 - (SWIR2/10000))**2.0)/(2.0 * (SWIR2/10000))', 
+  {
+    'SWIR2': image.select('B11'), 
+  }).rename('STR');
+  return image.addBands(STR);
+}
+
+
+var STRwet = function(image)
+{
+  var STRw = image.expression(
+  '(0.0406 + (-0.2568 * NDVI))', 
+  {
+    'NDVI': image.select('NDVI')
+  }).rename('STRwet')
+  
+  return image.addBands(STRw)
+  
+};
+
+
+var STRdry = function(image)
+{
+  var STRd = image.expression(
+  '(0.5711 + (0.0424 * NDVI))', 
+  {
+    'NDVI': image.select('NDVI'), 
+  }).rename('STRdry')
+
+return image.addBands(STRd)
+  
+};
+
+
+var cal_wetness = function(image){
+  
+var OPTRAM = image.expression(
+  '((STRdry - (SWIR2/10000))/(STRdry - STRwet))*100', 
+  {
+    'STRdry': image.select('STRdry'), 
+    'SWIR2': image.select('B11'),
+    'STRwet': image.select('STRwet'),
+  }).rename('OPTRAM')
+return image.addBands(OPTRAM.toInt8())
+}
+
+
+
+
+// creating empty image
+var empty_img = ee.Image();
+// matching the datatype of empty image to exported stack collection
+var empty_img_int16 = empty_img.toInt16();
+//print('empty_img_int16', empty_img_int16 );
+
+// checking for number of bands
+var count = empty_img_int16.bandNames().size();
+//print('count', count );
+
+// Function for checking image with band less than 1, and replacing it with empty band
+var onebandcount = function(image) {
+  return ee.Algorithms.If(ee.Number(image.bandNames().length()).lt(1),
+                          image.addBands(empty_img_int16), image);
+                          
+};
+
+
+// function for cloud masking
+function maskCloudAndShadows(image) {
+  var cloudProb = image.select('MSK_CLDPRB');
+  var snowProb = image.select('MSK_SNWPRB');
+  var cloud = cloudProb.lt(5);
+  var snow = snowProb.lt(5);
+  var scl = image.select('SCL'); 
+  var shadow = scl.eq(3); // 3 = cloud shadow
+  var cirrus = scl.eq(10); // 10 = cirrus
+  // Cloud probability less than 5% or cloud shadow classification
+  var mask = (cloud.and(snow)).and(cirrus.neq(1)).and(shadow.neq(1));
+  return image.updateMask(mask);
+}
+
+
+
+/*
+// compute MSAVI2 using expression
+var msavi2 = composite.expression(
+  '(2 * NIR + 1 - sqrt(pow((2 * NIR + 1), 2) - 8 * (NIR - RED)) ) / 2', 
+  {
+    'NIR': composite.select('B8'), 
+    'RED': composite.select('B4')
+  }
+);
+*/
+// // Calculate NDVI.
+// var calculateNDVI = function(scene) {
+//   // get a string representation of the date.
+//   var dateString = ee.Date(scene.get('system:time_start')).format('yyyy-MM-dd');
+//   var ndvi = scene.normalizedDifference(['B8', 'B4']);
+//   var ndvi2 = ndvi.multiply(10000).toInt16();
+//   return ndvi2.rename(dateString);
+// };
+
+// NDVI - 'B8', 'B4'
+// NDMI - 'B8', 'B11'
+//
+
+var addNDVI = function(image) {
+  var ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI');
+  return image.addBands(ndvi.multiply(10000).toInt16());
+};
+
+var stackCollection = function(collection) {
+  // Create an initial image.
+  var first = ee.Image(collection.first()).select([]);
+
+  // Write a function that appends a band to an image.
+  var appendBands = function(image, previous) {
+    return ee.Image(previous).addBands(image);
+  };
+  return ee.Image(collection.iterate(appendBands, first));
+};
+
+//----------------- end functon ---------------
+
+
+
+
+
+var OD_all_projects = ee.FeatureCollection("projects/ee-shubhampawar/assets/DoWR_Major_Ayacut_LULC_agri_simp");
+
+
+
+var Indravati = ee.List(['Upper Indravati Extn (Upper Indrabathi )',  'Upper Indravati Extn (Upper Indravati Extn)',
+ 'Upper Indravati Extn (Upper Indravati Right Main Canal)',  'Upper Indravati Irrigation',])
+ 
+var Hirakud = ee.List([ 'Hirakud System Including Modernisation (Hirakud_Bargarh)',  'Hirakud System Including Modernisation (Hirakud_Sambalpur)'])
+var Rengali = ee.List([  'Rengali Left Bank Canal',  'Rengali Right Bank Canal' ])
+
+var Rushikulya = ee.List(['Rushikulya System (Rushikulya-Bhanjanagar)', 'Rushikulya System (Rushikulya-Berhampur)'])
+
+
+var Mahanadi = ee.List([ 'Mahanadi Chitrotpala Island (Mahanadi Barrage)','Mahanadi Delta (Chandanpur Branch Canal)',
+'Mahanadi Delta (Gop Branch Canal)','Mahanadi Delta (Kanas Branch Canal System)','Mahanadi Delta (Lower Mahanadi Jaraka)','Mahanadi Delta (Kendrapara Canal System)',
+'Mahanadi Delta (Lower Mahanadi_Prachi)','Mahanadi Delta (Machhagaon Canal System)','Mahanadi Delta (Mahanadi South Division)','Mahanadi Delta (Mahanadi North Divison)',
+'Mahanadi Delta (Nimapara Branch Canal)','Mahanadi Delta (Prachi Division)','Mahanadi Delta (Sakhigopal Branch Canal)'])
+
+
+var Anandapur = ee.List(['Anandapur'])
+var Baitarani = ee.List(['Baitarani System Jajpur'])
+var Lower_Indra = ee.List(['Lower Indra'])
+var Potteru = ee.List(['Potteru Irrigation'])
+var Salandi = ee.List(['Salandi'])
+var Salki = ee.List(['Salki'])
+var Subarnarekah = ee.List(['Subarnarekah'])
+var Kolab = ee.List(['Upper Kolab Irrigation'])
+
+
+var parts_list  = ee.List([Indravati, Hirakud, Rengali, Rushikulya, Mahanadi, Anandapur, Baitarani, Lower_Indra, Potteru, Salandi, Salki, Subarnarekah, Kolab] )
+
+
+var parts_nam  = ee.List(['Indravati', 'Hirakud', 'Rengali', 'Rushikulya', 'Mahanadi', 'Anandapur', 'Baitarani', 'Lower_Indra', 'Potteru', 'Salandi', 'Salki', 'Subarnarekah', 'Kolab'])
+
+var num_parts = parts_nam.length().getInfo()
+
+for (var k = 0 ; k < num_parts ; k++){
+  
+var nam = parts_nam.get(k).getInfo(); //'Rushikulya' //
+
+var roi = ee.FeatureCollection(OD_all_projects.filter(ee.Filter.inList('project_na', parts_list.get(k)))).geometry().bounds()
+
+//var roi = roi2.simplify({'maxError': 1});
+
+print(nam)
+
+//Map.addLayer(roi)
+//Map.centerObject(roi,10)
+
+var clip_image = function(image){
+  return image.clip(roi)
+}
+
+
+// Define an example collection.
+var img_collection = ee.ImageCollection('COPERNICUS/S2_SR')
+                  .filterDate(start_Date, end_Date)
+                  .filterBounds(roi)
+                  .filter(ee.Filter.lt('CLOUD_COVERAGE_ASSESSMENT', 90))
+                  //.map(maskCloudAndShadows)
+                  .map(addNDVI)
+                  .map(cal_str)
+                  .map(STRdry)
+                  .map(STRwet)
+                  .map(cal_wetness)
+                  .map(clip_image);
+                   
+print(img_collection);
+
+//Map.addLayer(img_collection.first())
+
+// var collection2 = img_collection.map(function(image){
+//   return image.set('simpleDateMillis', ee.Date(image.date().format('YYYY-MM-dd')).millis())
+// });
+
+
+// // get all system:time_start in a list
+// var listMillis = ee.List(collection2.aggregate_array('simpleDateMillis'));
+// var uniqueDates = listMillis.distinct();
+
+// //print(uniqueDates)
+
+// var num_dates = uniqueDates.length().getInfo()
+
+var range = img_collection.reduceColumns(ee.Reducer.minMax(), ["system:time_start"])
+
+var startDate = ee.Date(ee.Date(range.get('min')).format('yyyy-MM-dd').getInfo());
+//print('startDate', startDate);
+var endDate = ee.Date(ee.Date(range.get('max')).format('yyyy-MM-dd').getInfo());
+//print('endDate', endDate);
+
+
+// Difference in days between start and finish
+var diff = endDate.difference(startDate, 'day');
+//print(diff)
+
+
+// Make a list of all dates
+var range = ee.List.sequence(0, diff.subtract(1), 10).map(function(day){return startDate.advance(day,'day')});
+//print(range);
+
+
+// Funtion for iteraton over the range of dates
+var ten_day_max_mosaics = function(date, newlist) {
+  // Cast
+  date = ee.Date(date);
+  
+  //var d_milli = ee.Date(date.millis());
+  var d_milli = date.millis();
+  newlist = ee.List(newlist);
+
+  // Filter collection between date and the next day
+  var filtered = img_collection.filterDate(date, date.advance(10,'day')).select('OPTRAM').set('system:time_start',d_milli);//.format('yyyy-MM-dd')
+
+  // Make the mosaic
+  var image = ee.Image(filtered.reduce(ee.Reducer.max()).clip(roi)).set('system:time_start',d_milli)//.format('yyyy-MM-dd')//.rename(ee.String('NDVI_').cat(d_milli.format('yyyy-MM-dd')));
+
+  // Add the mosaic to a list only if the collection has images
+  //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+  return ee.List(newlist.add(image));
+  
+};
+
+
+
+
+var newcol = ee.ImageCollection(ee.List(range.iterate(ten_day_max_mosaics, ee.List([]))));
+//print(newcol);
+
+
+
+var final_col = newcol.map(onebandcount);
+
+//var date_list1 = final_col.reduceColumns(ee.Reducer.toList(), ["system:time_start"]).get('list').getInfo();
+ 
+//print(final_col);
+
+
+
+//var num_date = final_col.size().getInfo();
+//print(num_date);
+
+var OPTRAM_stack = stackCollection(final_col);
+
+//print(final_col)
+
+var fd_name = 'OD_OPTRAM_rabbi2022'//_'+ j
+
+var fileName = 'OD_OPTRAM_rabbi2022_'+ nam
+
+
+Export.table.toDrive({
+  collection: final_col,
+  folder: fd_name ,
+  description: fileName,
+  fileNamePrefix:  fileName,
+  fileFormat: 'csv'
+});
+
+// Export Sentinel VH VV image as TIFF file 
+Export.image.toDrive({
+  image: OPTRAM_stack, 
+  description: fileName,
+  fileNamePrefix:  fileName,
+  region: roi.bounds(), 
+  folder: fd_name ,
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});
+
+
+// export collection to google drive
+// batch.Download.ImageCollection.toDrive(final_col, fd_name, {
+//   name: 'NDMI_HR_district_2021-22_'+ nam +'_{system_date}',
+//   scale: 10,
+//   crs: 'EPSG:4326',
+//   type : 'int16',
+//   region: roi.bounds().getInfo() // or geometry.getInfo()
+// })
+
+
+
+
+// for (var j = 0 ; j < num_dates ; j++){
+  
+// var st_date = ee.Date(uniqueDates.get(j).getInfo());
+// var en_date = st_date.advance(1, 'day')
+
+
+// var filterd = img_collection.filterDate(st_date, en_date).select('OPTRAM')
+
+
+// var mosaic_collection = filterd.reduce(ee.Reducer.max());
+
+// var formatted_date = st_date.format('yyyy-MM-dd').getInfo();
+
+
+// // Export Sentinel VH VV image as TIFF file 
+//   Export.image.toDrive({
+//     image: mosaic_collection, 
+//     description:  nam + 'RabliIndexCoverage_' + formatted_date,
+//     fileNamePrefix:   nam + 'RabliIndexCoverage_' + formatted_date,
+//     region: roi, 
+//     folder: 'OD_Sen2_OPTRAM_22_rabbi',
+//     scale: 10,
+//     crs: 'EPSG:4326',
+//     maxPixels: 1.0E13,
+//     fileFormat: 'GeoTIFF'
+//   });
+
+// }
+
+}

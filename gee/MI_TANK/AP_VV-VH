@@ -1,0 +1,190 @@
+//====================================================================
+//            functions 
+//
+//====================================================================
+
+
+
+function terrainCorrection(image) { 
+  var imgGeom = image.geometry();
+  var srtm = ee.Image('USGS/SRTMGL1_003').clip(imgGeom); // 30m srtm 
+  var sigma0Pow = ee.Image.constant(10).pow(image.divide(10.0));
+
+  // Article ( numbers relate to chapters) 
+  // 2.1.1 Radar geometry 
+  var theta_i = image.select('angle');
+  var phi_i = ee.Terrain.aspect(theta_i)
+    .reduceRegion(ee.Reducer.mean(), theta_i.get('system:footprint'), 1000)
+    .get('aspect');
+
+  // 2.1.2 Terrain geometry
+  var alpha_s = ee.Terrain.slope(srtm).select('slope');
+  var phi_s = ee.Terrain.aspect(srtm).select('aspect');
+
+  // 2.1.3 Model geometry
+  // reduce to 3 angle
+  var phi_r = ee.Image.constant(phi_i).subtract(phi_s);
+
+  // convert all to radians
+  var phi_rRad = phi_r.multiply(Math.PI / 180);
+  var alpha_sRad = alpha_s.multiply(Math.PI / 180);
+  var theta_iRad = theta_i.multiply(Math.PI / 180);
+  var ninetyRad = ee.Image.constant(90).multiply(Math.PI / 180);
+
+  // slope steepness in range (eq. 2)
+  var alpha_r = (alpha_sRad.tan().multiply(phi_rRad.cos())).atan();
+
+  // slope steepness in azimuth (eq 3)
+  var alpha_az = (alpha_sRad.tan().multiply(phi_rRad.sin())).atan();
+
+  // local incidence angle (eq. 4)
+  var theta_lia = (alpha_az.cos().multiply((theta_iRad.subtract(alpha_r)).cos())).acos();
+  var theta_liaDeg = theta_lia.multiply(180 / Math.PI);
+  // 2.2 
+  // Gamma_nought_flat
+  var gamma0 = sigma0Pow.divide(theta_iRad.cos());
+  var gamma0dB = ee.Image.constant(10).multiply(gamma0.log10());
+  var ratio_1 = gamma0dB.select('VV').subtract(gamma0dB.select('VH'));
+
+  // Volumetric Model
+  var nominator = (ninetyRad.subtract(theta_iRad).add(alpha_r)).tan();
+  var denominator = (ninetyRad.subtract(theta_iRad)).tan();
+  var volModel = (nominator.divide(denominator)).abs();
+
+  // apply model
+  var gamma0_Volume = gamma0.divide(volModel);
+  var gamma0_VolumeDB = ee.Image.constant(10).multiply(gamma0_Volume.log10());
+
+  // we add a layover/shadow maskto the original implmentation
+  // layover, where slope > radar viewing angle 
+  var alpha_rDeg = alpha_r.multiply(180 / Math.PI);
+  var layover = alpha_rDeg.lt(theta_i);
+
+  // shadow where LIA > 90
+  var shadow = theta_liaDeg.lt(85);
+
+  // calculate the ratio for RGB vis
+  var ratio = gamma0_VolumeDB.select('VV').subtract(gamma0_VolumeDB.select('VH'));
+
+  var output = gamma0_VolumeDB.addBands(ratio).addBands(alpha_r).addBands(phi_s).addBands(theta_iRad)
+    .addBands(layover).addBands(shadow).addBands(gamma0dB).addBands(ratio_1);
+
+  return image.addBands(
+    output.select(['VV', 'VH'], ['VV', 'VH']),
+    null,
+    true
+  );
+}
+
+// Extract date from meta data
+function dates(imgcol){
+  var range = imgcol.reduceColumns(ee.Reducer.minMax(), ["system:time_start"]);
+  var printed = ee.String('from ')
+      .cat(ee.Date(range.get('min')).format('YYYY-MM-dd'))
+      .cat(' to ')
+      .cat(ee.Date(range.get('max')).format('YYYY-MM-dd'));
+  return printed;
+}
+// Functions to convert from/to dB
+function toNatural(img) {
+  return ee.Image(10.0).pow(img.select(0).divide(10.0));
+}
+
+function toDB(img) {
+  return ee.Image(img).log10().multiply(10.0);
+}
+
+function sigmatoGamma(image, angle){
+  return image
+    .subtract(angle.multiply(Math.PI/180.0).cos().log10().multiply(10.0));
+}
+    
+function sigmatoGammaImage (image){
+  var bands = image.bandNames();
+  var nbands = bands.length();
+  var angle = image.select('angle');
+  var out = sigmatoGamma(image.select(0), ee.Image(angle));
+  image.addBands(out, bands[0], true);
+  if (nbands -1 > 1){
+    var out2 = sigmatoGamma(image.select(1), ee.Image(angle));
+    image.addBands(out2, bands[1], true);
+  }
+  return image;
+}  
+
+
+
+//====================================================================
+
+var odisha_bound =  ee.FeatureCollection("projects/ee-shubhampawar/assets/ap_aoi");
+//var odisha_bound = ee.FeatureCollection("projects/ee-shubhampawar/assets/odisha_state");
+
+var pass_direction = "DESCENDING";
+var aoi = odisha_bound.geometry().buffer(10000)
+
+var start_date = '2022-11-01'
+var end_date = '2023-06-01'
+
+var collection= ee.ImageCollection('COPERNICUS/S1_GRD')
+    .filter(ee.Filter.eq('instrumentMode','IW'))
+  //.filter(ee.Filter.listContains('transmitterReceiverPolarisation', polarization))
+    .filter(ee.Filter.eq('orbitProperties_pass',pass_direction)) 
+    .filter(ee.Filter.eq('resolution_meters',10))
+  //.filter(ee.Filter.eq('relativeOrbitNumber_start',relative_orbit ))
+    .filterBounds(odisha_bound)
+    .filterDate(start_date, end_date);
+
+//Map.addLayer(collection)
+print(collection)
+Map.addLayer(aoi)
+//Map.addLayer(odisha_bound)
+
+var collection2 = collection.map(function(image){
+  return image.set('simpleDateMillis', ee.Date(image.date().format('YYYY-MM-dd')).millis())
+});
+
+// get all system:time_start in a list
+var listMillis = ee.List(collection2.aggregate_array('simpleDateMillis'));
+var uniqueDates = listMillis.distinct();
+
+print(uniqueDates)
+
+var num_dates = uniqueDates.length().getInfo()
+
+
+for (var j = 0 ; j < num_dates ; j++){
+  
+var st_date = ee.Date(uniqueDates.get(j).getInfo());
+var en_date = st_date.advance(1, 'day')
+
+
+var filterd = collection.filterDate(st_date, en_date)
+var terrain_cor_col = filterd.map(terrainCorrection);
+
+var mosaic_collection = terrain_cor_col.mosaic();
+var smoothing_radius = 30;
+var Mosaic_smooth = mosaic_collection.focal_mean(smoothing_radius, 'square', 'meters');
+
+var gamma_image_geom = filterd.geometry().dissolve()
+var intersection_area = aoi.intersection(gamma_image_geom)
+var gamma_image = sigmatoGammaImage(Mosaic_smooth);
+
+var final_iamge = gamma_image.select('VV', 'VH').clip(intersection_area).multiply(100).toInt16()
+var formatted_date = st_date.format('yyyy-MM-dd').getInfo();
+
+
+// Export Sentinel VH VV image as TIFF file 
+  Export.image.toDrive({
+    image: final_iamge, 
+    description: "AP" + '_VV-VH_' + formatted_date,
+    fileNamePrefix:  "AP" + '_Sentinel1_VV-VH_' + formatted_date + '_10m_16bit',
+    region: intersection_area, 
+    folder: 'AP_WSA',
+    scale: 10,
+    crs: 'EPSG:4326',
+    maxPixels: 1.0E13,
+    fileFormat: 'GeoTIFF'
+  });
+
+
+}

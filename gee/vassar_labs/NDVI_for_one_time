@@ -1,0 +1,41 @@
+var aoi = ee.FeatureCollection("projects/ee-shubhampawar/assets/Odisha_Districts_v2")
+            .filter(ee.Filter.equals('District', 'MALKANGIRI')).geometry()
+
+
+
+// Create two S2 collections for MX and SLC product
+var stdate = ee.Date('2022-01-01')
+var endate = ee.Date('2022-12-31')
+
+var addNDVI = function(image) {
+  var ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI');
+  return image.addBands(ndvi.multiply(10000).toInt16());
+};
+
+var s2_l1_image = ee.ImageCollection('COPERNICUS/S2')
+                .filterBounds(aoi)
+                .filterDate(stdate, endate)
+                .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', 30))
+                .sort('CLOUDY_PIXEL_PERCENTAGE', false)
+                .map(addNDVI)
+                .select('NDVI')
+                .reduce(ee.Reducer.percentile([50]))
+                .round().toUint16().clip(aoi)
+
+
+Map.addLayer(aoi, {}, 'Kanpur', false)
+//Map.addLayer(s2_l1_image, s2_vis, 'S2 L2 India')
+
+Map.centerObject(aoi, 10)
+
+// Export the 10m MX image
+Export.image.toDrive({
+  image: s2_l1_image.select('NDVI'),
+  description: 'MALKANGIRI_NDVI',
+  fileNamePrefix:  'MALKANGIRI_NDVI',
+  folder: 'MALKANGIRI_Forest_fire_data',
+  scale: 10, 
+  region: aoi,
+  maxPixels: 10e11,
+  crs: 'EPSG:4326'
+});

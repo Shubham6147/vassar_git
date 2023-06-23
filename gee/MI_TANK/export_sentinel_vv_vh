@@ -1,0 +1,381 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var TG_right = ee.FeatureCollection("users/saptarshi/Telangana_boundary_right"),
+    DEM3 = ee.Image("WWF/HydroSHEDS/03VFDEM"),
+    TG_left = ee.FeatureCollection("users/saptarshi/Telangana_boundary_left"),
+    geometry3 = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[78.7224770228747, 20.121498289256273],
+          [77.6238442103747, 15.52095963166741],
+          [78.0632973353747, 15.542129916165312],
+          [79.0960121791247, 20.059591370010427]]]),
+    geometry4 = /* color: #0b4a8b */ee.Geometry.Polygon(
+        [[[80.2385903041247, 19.811719979979156],
+          [79.2937660853747, 15.922820488894594],
+          [79.7551918666247, 15.965075263233624],
+          [80.6560707728747, 19.68763893892339]]]),
+    table = ee.FeatureCollection("users/saptarshi/kwaram_srsp_command_area_left_path_modified2"),
+    table2 = ee.FeatureCollection("users/saptarshi/Peddapalli_district"),
+    geometry5 = 
+    /* color: #0b4a8b */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.71548497275819, 19.43761345091416],
+          [82.71548497275819, 19.030471119802492],
+          [82.94619786338319, 19.030471119802492],
+          [82.94619786338319, 19.43761345091416]]], null, false),
+    SRSP_left = ee.FeatureCollection("users/saptarshi/kwaram_command_area_left_path"),
+    SRSP_right = ee.FeatureCollection("users/saptarshi/kwaram_command_area_right_path"),
+    Siddipet = ee.FeatureCollection("users/saptarshi/Siddipet"),
+    periyar = ee.FeatureCollection("users/saptarshi/Periyar_basin_boundary_buffer"),
+    Path_periyar = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[76.8389228892478, 11.011274361091962],
+          [76.1687568736228, 8.825344767409842],
+          [76.5752510142478, 8.879622050896891],
+          [77.1575264048728, 10.935776246248667]]]),
+    New_SRSP_left = ee.FeatureCollection("users/saptarshi/New_SRSP_left"),
+    New_SRSP_right = ee.FeatureCollection("users/saptarshi/New_SRSP_right"),
+    UK_SG = ee.FeatureCollection("users/saptarshi/UK_SG_boundary"),
+    uk_geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-2.617397682221352, 51.73453623498537],
+          [-2.768459693940102, 51.32788911472652],
+          [-2.438869850190102, 51.314157165869375],
+          [-2.274074928315102, 51.69709930360078]]]),
+    WB_path1 = ee.FeatureCollection("projects/ee-saptarshi/assets/WB_path1"),
+    WB_path2 = ee.FeatureCollection("projects/ee-saptarshi/assets/WB_path2"),
+    WB = ee.FeatureCollection("projects/ee-saptarshi/assets/watershed_boundary_5km_geo"),
+    KTCC = ee.FeatureCollection("projects/ee-saptarshi/assets/Tamilnadu_KTCC_District_boundary_dissolve");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var TG_right = ee.FeatureCollection("users/saptarshi/Telangana_boundary_right"),
+    DEM3 = ee.Image("WWF/HydroSHEDS/03VFDEM"),
+    TG_left = ee.FeatureCollection("users/saptarshi/Telangana_boundary_left"),
+    geometry3 = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[78.7224770228747, 20.121498289256273],
+          [77.6238442103747, 15.52095963166741],
+          [78.0632973353747, 15.542129916165312],
+          [79.0960121791247, 20.059591370010427]]]),
+    geometry4 = /* color: #0b4a8b */ee.Geometry.Polygon(
+        [[[80.2385903041247, 19.811719979979156],
+          [79.2937660853747, 15.922820488894594],
+          [79.7551918666247, 15.965075263233624],
+          [80.6560707728747, 19.68763893892339]]]),
+    //table = ee.FeatureCollection("users/saptarshi/kwaram_srsp_command_area_left_path_modified2"),
+    //table2 = ee.FeatureCollection("users/saptarshi/Peddapalli_district"),
+    geometry5 = 
+    /* color: #0b4a8b */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.71548497275819, 19.43761345091416],
+          [82.71548497275819, 19.030471119802492],
+          [82.94619786338319, 19.030471119802492],
+          [82.94619786338319, 19.43761345091416]]], null, false),
+    //SRSP_left = ee.FeatureCollection("users/saptarshi/kwaram_command_area_left_path"),
+    //SRSP_right = ee.FeatureCollection("users/saptarshi/kwaram_command_area_right_path"),
+    //Siddipet = ee.FeatureCollection("users/saptarshi/Siddipet"),
+    //periyar = ee.FeatureCollection("users/saptarshi/Periyar_basin_boundary_buffer"),
+    Path_periyar = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[76.8389228892478, 11.011274361091962],
+          [76.1687568736228, 8.825344767409842],
+          [76.5752510142478, 8.879622050896891],
+          [77.1575264048728, 10.935776246248667]]]),
+    //New_SRSP_left = ee.FeatureCollection("users/saptarshi/New_SRSP_left"),
+    //New_SRSP_right = ee.FeatureCollection("users/saptarshi/New_SRSP_right"),
+    //UK_SG = ee.FeatureCollection("users/saptarshi/UK_SG_boundary"),
+    uk_geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-2.617397682221352, 51.73453623498537],
+          [-2.768459693940102, 51.32788911472652],
+          [-2.438869850190102, 51.314157165869375],
+          [-2.274074928315102, 51.69709930360078]]])
+    //WB_path1 = ee.FeatureCollection("projects/ee-saptarshi/assets/WB_path1"),
+    //WB_path2 = ee.FeatureCollection("projects/ee-saptarshi/assets/WB_path2"),
+    //WB = ee.FeatureCollection("projects/ee-saptarshi/assets/watershed_boundary_5km_geo"),
+    //KTCC = ee.FeatureCollection("projects/ee-saptarshi/assets/Tamilnadu_KTCC_District_boundary_dissolve")
+    ;
+/********************************************************************************************
+                           SET SAR PARAMETERS (can be left default)*/
+
+var pass_direction = "DESCENDING"; /* or 'ASCENDING'when images are being compared use only one 
+                           pass direction. Consider changing this parameter, if your image 
+                           collection is empty. In some areas more Ascending images exist than 
+                           than descending or the other way around.*/
+
+/********************************************************************************************
+  ---->>> DO NOT EDIT THE SCRIPT PAST THIS POINT! (unless you know what you are doing) <<<---
+  ------------------>>> now hit the'RUN' at the top of the script! <<<-----------------------
+  -----> The final flood product will be ready for download on the right (under tasks) <-----
+
+  ******************************************************************************************/
+
+//---------------------------------- Translating User Inputs ------------------------------//
+
+
+function terrainCorrection(image) { 
+  var imgGeom = image.geometry();
+  var srtm = ee.Image('USGS/SRTMGL1_003').clip(imgGeom); // 30m srtm 
+  var sigma0Pow = ee.Image.constant(10).pow(image.divide(10.0));
+
+  // Article ( numbers relate to chapters) 
+  // 2.1.1 Radar geometry 
+  var theta_i = image.select('angle');
+  var phi_i = ee.Terrain.aspect(theta_i)
+    .reduceRegion(ee.Reducer.mean(), theta_i.get('system:footprint'), 1000)
+    .get('aspect');
+
+  // 2.1.2 Terrain geometry
+  var alpha_s = ee.Terrain.slope(srtm).select('slope');
+  var phi_s = ee.Terrain.aspect(srtm).select('aspect');
+
+  // 2.1.3 Model geometry
+  // reduce to 3 angle
+  var phi_r = ee.Image.constant(phi_i).subtract(phi_s);
+
+  // convert all to radians
+  var phi_rRad = phi_r.multiply(Math.PI / 180);
+  var alpha_sRad = alpha_s.multiply(Math.PI / 180);
+  var theta_iRad = theta_i.multiply(Math.PI / 180);
+  var ninetyRad = ee.Image.constant(90).multiply(Math.PI / 180);
+
+  // slope steepness in range (eq. 2)
+  var alpha_r = (alpha_sRad.tan().multiply(phi_rRad.cos())).atan();
+
+  // slope steepness in azimuth (eq 3)
+  var alpha_az = (alpha_sRad.tan().multiply(phi_rRad.sin())).atan();
+
+  // local incidence angle (eq. 4)
+  var theta_lia = (alpha_az.cos().multiply((theta_iRad.subtract(alpha_r)).cos())).acos();
+  var theta_liaDeg = theta_lia.multiply(180 / Math.PI);
+  // 2.2 
+  // Gamma_nought_flat
+  var gamma0 = sigma0Pow.divide(theta_iRad.cos());
+  var gamma0dB = ee.Image.constant(10).multiply(gamma0.log10());
+  var ratio_1 = gamma0dB.select('VV').subtract(gamma0dB.select('VH'));
+
+  // Volumetric Model
+  var nominator = (ninetyRad.subtract(theta_iRad).add(alpha_r)).tan();
+  var denominator = (ninetyRad.subtract(theta_iRad)).tan();
+  var volModel = (nominator.divide(denominator)).abs();
+
+  // apply model
+  var gamma0_Volume = gamma0.divide(volModel);
+  var gamma0_VolumeDB = ee.Image.constant(10).multiply(gamma0_Volume.log10());
+
+  // we add a layover/shadow maskto the original implmentation
+  // layover, where slope > radar viewing angle 
+  var alpha_rDeg = alpha_r.multiply(180 / Math.PI);
+  var layover = alpha_rDeg.lt(theta_i);
+
+  // shadow where LIA > 90
+  var shadow = theta_liaDeg.lt(85);
+
+  // calculate the ratio for RGB vis
+  var ratio = gamma0_VolumeDB.select('VV').subtract(gamma0_VolumeDB.select('VH'));
+
+  var output = gamma0_VolumeDB.addBands(ratio).addBands(alpha_r).addBands(phi_s).addBands(theta_iRad)
+    .addBands(layover).addBands(shadow).addBands(gamma0dB).addBands(ratio_1);
+
+  return image.addBands(
+    output.select(['VV', 'VH'], ['VV', 'VH']),
+    null,
+    true
+  );
+}
+
+// Extract date from meta data
+function dates(imgcol){
+  var range = imgcol.reduceColumns(ee.Reducer.minMax(), ["system:time_start"]);
+  var printed = ee.String('from ')
+      .cat(ee.Date(range.get('min')).format('YYYY-MM-dd'))
+      .cat(' to ')
+      .cat(ee.Date(range.get('max')).format('YYYY-MM-dd'));
+  return printed;
+}
+// Functions to convert from/to dB
+function toNatural(img) {
+  return ee.Image(10.0).pow(img.select(0).divide(10.0));
+}
+
+function toDB(img) {
+  return ee.Image(img).log10().multiply(10.0);
+}
+
+function sigmatoGamma(image, angle){
+  return image
+    .subtract(angle.multiply(Math.PI/180.0).cos().log10().multiply(10.0));
+}
+    
+function sigmatoGammaImage (image){
+  var bands = image.bandNames();
+  var nbands = bands.length();
+  var angle = image.select('angle');
+  var out = sigmatoGamma(image.select(0), ee.Image(angle));
+  image.addBands(out, bands[0], true);
+  if (nbands -1 > 1){
+    var out2 = sigmatoGamma(image.select(1), ee.Image(angle));
+    image.addBands(out2, bands[1], true);
+  }
+  return image;
+}  
+
+//  var collection= ee.ImageCollection('COPERNICUS/S1_GRD')
+//    .filter(ee.Filter.eq('instrumentMode','IW'))
+  //.filter(ee.Filter.listContains('transmitterReceiverPolarisation', polarization))
+//filter(ee.Filter.eq('orbitProperties_pass',pass_direction)) 
+//    .filter(ee.Filter.eq('resolution_meters',10))
+  //.filter(ee.Filter.eq('relativeOrbitNumber_start',relative_orbit ))
+//    .filterBounds(aoi2)
+//    .filterDate('2019-06-01', '2019-10-31');
+
+//print(collection);
+
+
+
+
+var start_date = '2023-06-08';//var end_date = '2020-11-10';
+
+//right next +7 rp
+//left next +5 rp
+
+var right_path = false;
+//var right_path = true;
+var name_list = ee.List(['TG_left', 'Balurghat', 'Manikchak', 'Kaliachak', 'Sagardighi', 'Suri MDB', 'Krishnaganj', 'Ranaghat']);
+var name_len = name_list.size().getInfo();
+
+for (var j = 0 ; j < 1 ; j++){
+  
+var nam = name_list.get(j).getInfo();
+
+if (right_path!==false){
+//right path
+// rename selected geometry feature 
+  var aoi = ee.FeatureCollection(TG_right); //ee.FeatureCollection(WB).filter(ee.Filter.eq('Name', nam));
+  Map.addLayer(aoi);
+  var aoi2 = geometry4; //right path
+  //var aoi2 = WB_path2; //right path
+  var path = 'right_path';
+  }
+else{
+//left path
+  //var aoi = ee.FeatureCollection(table2); //left path
+  var aoi = ee.FeatureCollection(TG_left); 
+  var aoi2 = geometry3; //left path
+  //var aoi = ee.FeatureCollection(periyar); 
+  //var aoi2 = Path_periyar; 
+  var path = 'left_path';
+}
+
+Map.centerObject(aoi,7);
+Map.addLayer(aoi);
+
+
+for (var year = 1; year < 6; year++){
+  //------------------------------- DATA SELECTION & PREPROCESSING --------------------------//
+  var increment = (12*(year-1));
+  var st_date = ee.Date(start_date).advance(increment, 'day');
+  var end_date = st_date.advance(1, 'day');
+  // Load and filter Sentinel-1 GRD data by predefined parameters 
+  var collection= ee.ImageCollection('COPERNICUS/S1_GRD')
+    .filter(ee.Filter.eq('instrumentMode','IW'))
+  //.filter(ee.Filter.listContains('transmitterReceiverPolarisation', polarization))
+    .filter(ee.Filter.eq('orbitProperties_pass',pass_direction)) 
+    .filter(ee.Filter.eq('resolution_meters',10))
+  //.filter(ee.Filter.eq('relativeOrbitNumber_start',relative_orbit ))
+    .filterBounds(aoi2)
+    .filterDate(st_date, end_date);
+  //.select(polarization);
+  print(collection);
+  var col_length = collection.size().getInfo();
+  
+//filterout imagescollection with 0 images 
+
+  if (col_length > 0){
+// Print selected tiles to the console
+      // print dates of before images to console
+    var image_count = collection.size();
+    print(ee.String('Tiles selected: Before Flood ').cat('(').cat(image_count).cat(')'),
+      dates(collection), collection);
+    
+    var terrain_cor_col = collection.map(terrainCorrection);
+      
+// Create a mosaic of selected tiles and clip to study area
+    var mosaic_collection = terrain_cor_col.mosaic();
+    var smoothing_radius = 30;
+    var Mosaic_smooth = mosaic_collection.focal_mean(smoothing_radius, 'square', 'meters');
+
+  //print(mosaic_collection);
+
+ /**
+ * Convert to gamma0 (correct for viewing angle)
+ * @param {ee.Image} image Multi band ee.Image (sigma0_dB)
+ * @param {ee.Image} angle Image representing incidence angle
+ */
+ 
+    var gamma_image = sigmatoGammaImage(Mosaic_smooth);
+ /* 
+    var img_VH = (gamma_image.select('VH'));
+    var vh_mask = img_VH.lt(-19);
+    var img_VV = (gamma_image.select('VV'));
+    var img_vv_msk1 = img_VV.lt(-13);
+    var img_vv_msk2 = img_VV.lt(-16);
+    var img_vv_msk3 = img_VV.lt(-19);
+    var img_vv_mask = img_vv_msk1.add(img_vv_msk2).add(img_vv_msk3);
+    var img_vv_vh_mask = img_vv_mask.multiply(vh_mask);
+    var img_vv_vh_mask_mask = img_vv_vh_mask.gt(0);
+    var connections = img_vv_vh_mask.connectedPixelCount();
+    var smoothing_radius = 30;
+  //var img_vv_mask3 = img_vv_mask.focal_mode(smoothing_radius, 'circle', 'meters');
+    var img_vv_vh_mask2 = img_vv_vh_mask.focal_mode(smoothing_radius, 'square', 'meters');
+  //print (img_VV);
+*/
+    var range = collection.reduceColumns(ee.Reducer.minMax(), ["system:time_start"]);
+    var im_date = ee.Date(range.get('min')).format('YYYY-MM-dd');
+    print(year, im_date);
+  
+    var first = ee.Image(collection.first());
+    var formatted_date = first.date().format('yyyy-MM-dd').getInfo();
+
+    print(formatted_date);
+
+//------------------------------  DISPLAY PRODUCTS  ----------------------------------//
+
+// Before and after flood SAR mosaic
+    Map.centerObject(aoi,8);
+  //Map.addLayer(img_VV, {min:-25,max:0}, 'VV',0);
+  //Map.addLayer(img_VH, {min:-25,max:0}, 'VH',1);
+  //Map.addLayer(img_vv_mask, {min:0,max:3}, 'm1',0);
+  //Map.addLayer(img_vv_vh_mask, {min:0,max:3}, 'm2',1);
+  //Map.addLayer(img_vv_mask3, {min:0,max:3}, 'm3',1);
+    //Map.addLayer(img_vv_vh_mask_mask.clip(aoi), {min:0,max:1}, 'm4',1);
+
+  //print(path);
+
+// Export Sentinel VH VV image as TIFF file 
+  Export.image.toDrive({
+    image: gamma_image.select('VV', 'VH').clip(aoi).multiply(100).toInt16(), 
+    description: nam + '_VV-VH_' + formatted_date,
+    fileNamePrefix:  nam + '_Sentinel1_VV-VH_' + formatted_date + '_10m_16bit',
+    region: aoi, 
+    folder: 'TG_WSA',
+    scale: 10,
+    crs: 'EPSG:4326',
+    maxPixels: 1.0E13,
+    fileFormat: 'GeoTIFF'
+  });
+ //   Export.image.toDrive({
+ //     image: img_vv_vh_mask_mask.toInt(), 
+ //     description: 'img_vH_mask2_' + formatted_date,
+ //     fileNamePrefix: 'Periyar_' + path + '_Sentinel1_WSA_' + formatted_date + '_10m',
+ //     region: aoi, 
+ //     scale: 10,
+ //     crs: 'EPSG:4326',
+//      maxPixels: 1.0E13,
+ //     fileFormat: 'GeoTIFF'
+ //   });
+  }
+}
+}

@@ -1,0 +1,54 @@
+var batch = require('users/fitoprincipe/geetools:batch')
+
+// var h25v07 = /* color: #d63000 */ee.Geometry.Polygon(
+//         [[[70.816, 9.970],
+//           [74.203, 20.021],
+//           [85.146, 20],
+//           [81.253, 9.948]]])
+
+var h25v07 = ee.FeatureCollection("users/shubhampawar/Tamilnadu_State_boundary");
+
+      
+Map.addLayer(h25v07)
+
+var addNDWI = function(image) {
+  var ndvi = image.normalizedDifference(['sur_refl_b02', 'sur_refl_b07']).rename('NDWI');
+  return image.addBands(ndvi.multiply(10000).toInt16());
+};
+
+var clip_image = function(image){
+  return image.clip(h25v07)
+}
+
+var dataset = ee.ImageCollection('MODIS/061/MOD13Q1')
+                  .filter(ee.Filter.date('2023-01-01', '2023-12-30'))
+                  .map(addNDWI)
+                  .select(['NDVI', 'NDWI'])
+                  .map(clip_image)
+                  //.first()
+                  //.clip(h25v07);
+
+print(dataset)
+
+batch.Download.ImageCollection.toDrive(dataset, 'TN_modeis_daily', {
+  name: 'TN_modeis_daily_{system_date}',
+  scale: 250,
+  crs: 'EPSG:4326',
+  type : 'int16',
+  region: h25v07//.bounds().getInfo() // or geometry.getInfo()
+})
+
+
+
+var ndvi = dataset.first().select('NDWI');
+var ndviVis = {
+  min: 0.0,
+  max: 10000.0,
+  palette: [
+    'FFFFFF', 'CE7E45', 'DF923D', 'F1B555', 'FCD163', '99B718', '74A901',
+    '66A000', '529400', '3E8601', '207401', '056201', '004C00', '023B01',
+    '012E01', '011D01', '011301'
+  ],
+};
+Map.addLayer(ndvi, ndviVis, 'NDVI');
+

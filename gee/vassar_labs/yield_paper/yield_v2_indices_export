@@ -1,0 +1,254 @@
+
+//var bound_FC = ee.FeatureCollection("users/shubhampawar/godavari_ts_remaining_corrected");
+//var bound_FC = ee.FeatureCollection("projects/ee-shubhampawar/assets/jhajjar_dict")
+
+var bound_FC = ee.FeatureCollection("users/shubhampawar/yamunanagar_aoi_buffer5km")
+
+var nam = 'AMBALA'
+
+var roi = ee.FeatureCollection(bound_FC.filter(ee.Filter.equals('Name', nam)).geometry()).geometry()
+
+Map.addLayer(roi)
+Map.centerObject(roi,10)
+
+var startDate = ee.Date('2021-09-10');
+var endDate = ee.Date('2021-09-22');
+
+var batch = require('users/fitoprincipe/geetools:batch')
+
+
+// ------ Functions -----------
+
+// creating empty image
+var empty_img = ee.Image();
+// matching the datatype of empty image to exported stack collection
+var empty_img_int16 = empty_img.toInt16();
+//print('empty_img_int16', empty_img_int16 );
+
+// checking for number of bands
+var count = empty_img_int16.bandNames().size();
+//print('count', count );
+
+// Function for checking image with band less than 1, and replacing it with empty band
+var onebandcount = function(image) {
+  return ee.Algorithms.If(ee.Number(image.bandNames().length()).lt(1),
+                          image.addBands(empty_img_int16), image);
+                          
+};
+
+
+// function for cloud masking
+function maskCloudAndShadows(image) {
+  var cloudProb = image.select('MSK_CLDPRB');
+  var snowProb = image.select('MSK_SNWPRB');
+  var cloud = cloudProb.lt(5);
+  var snow = snowProb.lt(5);
+  var scl = image.select('SCL'); 
+  var shadow = scl.eq(3); // 3 = cloud shadow
+  var cirrus = scl.eq(10); // 10 = cirrus
+  // Cloud probability less than 5% or cloud shadow classification
+  var mask = (cloud.and(snow)).and(cirrus.neq(1)).and(shadow.neq(1));
+  return image.updateMask(mask);
+}
+
+
+
+
+var addNDVI = function(image) {
+  var ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI');
+  return image.addBands(ndvi.multiply(1000).toInt16());
+};
+
+var addGNDVI = function(image) {
+  var ndvi = image.normalizedDifference(['B8', 'B3']).rename('GNDVI');
+  return image.addBands(ndvi.multiply(1000).toInt16());
+};
+
+var addNDMI = function(image) {
+  var ndvi = image.normalizedDifference(['B8', 'B11']).rename('NDMI');
+  return image.addBands(ndvi.multiply(1000).toInt16());
+};
+
+
+var addRdvi = function(image){
+  var Rdvi = image.expression(
+    '(NIR - RED)/sqrt((NIR + RED))',
+  //'(2 * NIR + 1 - sqrt(pow((2 * NIR + 1), 2) - 8 * (NIR - RED)) ) / 2', 
+  {
+    'NIR': image.select('B8'), 
+    'RED': image.select('B4')
+  }).rename('RDVI');
+  return image.addBands(Rdvi)//.multiply(1000).toInt16());
+}
+
+
+
+var addMasavi = function(image){
+  var masavi = image.expression(
+  '(2 * NIR + 1 - sqrt(pow((2 * NIR + 1), 2) - 8 * (NIR - RED)) ) / 2', 
+  {
+    'NIR': image.select('B8'), 
+    'RED': image.select('B4')
+  }).rename('MASAVI');
+  return image.addBands(masavi.multiply(1000).toInt16());
+}
+
+var addOsavi = function(image){
+  var osavi = image.expression(
+  '(1.16 * (NIR - RED) )/ (NIR + RED + 0.16)', 
+  {
+    'NIR': image.select('B8'), 
+    'RED': image.select('B4')
+  }).rename('OSAVI');
+  return image.addBands(osavi.multiply(1000).toInt16());
+}
+
+
+var addCi_green = function(image){
+  var Ci_green = image.expression(
+  '(NIR / RED) - 1', 
+  {
+    'NIR': image.select('B7'), 
+    'RED': image.select('B3')
+  }).rename('CI_GREEN');
+  return image.addBands(Ci_green.multiply(1000).toInt16());
+}
+
+var addCi_red = function(image){
+  var Ci_red = image.expression(
+  '(NIR / RED) - 1', 
+  {
+    'NIR': image.select('B7'), 
+    'RED': image.select('B5')
+  }).rename('CI_RED');
+  return image.addBands(Ci_red.multiply(1000).toInt16());
+}
+
+var addMsr = function(image){
+  var msr = image.expression(
+  '(NIR / RED - 1)/sqrt(NIR / RED + 1)', 
+  {
+    'NIR': image.select('B8'), 
+    'RED': image.select('B4')
+  }).rename('MSR');
+  return image.addBands(msr.multiply(1000).toInt16());
+}
+
+var addRVI = function(image){
+  var rvi = image.expression(
+  '(NIR / RED )', 
+  {
+    'NIR': image.select('B8'), 
+    'RED': image.select('B4')
+  }).rename('RVI');
+  return image.addBands(rvi.multiply(1000).toInt16());
+}
+
+var stackCollection = function(collection) {
+  // Create an initial image.
+  var first = ee.Image(collection.first()).select([]);
+
+  // Write a function that appends a band to an image.
+  var appendBands = function(image, previous) {
+    return ee.Image(previous).addBands(image);
+  };
+  return ee.Image(collection.iterate(appendBands, first));
+};
+
+//----------------- end functon ---------------
+
+// Define an example collection.
+var NDVI_collection = ee.ImageCollection('COPERNICUS/S2_SR')
+                  //.filter(ee.Filter.eq('MGRS_TILE', '44QPF')) //44QQG, 44QQF, 44QPF, 44QPG
+                  .filterDate(startDate, endDate)
+                  .filterBounds(roi)
+                  //.filter(ee.Filter.lt('CLOUD_COVERAGE_ASSESSMENT', 10))
+                  .map(maskCloudAndShadows)
+                  .map(addRVI)
+                  .map(addMsr)
+                  .map(addCi_red)
+                  .map(addCi_green)
+                  .map(addOsavi)
+                  .map(addMasavi)
+                  .map(addRdvi)
+                  .map(addNDMI)
+                  .map(addGNDVI)
+                  .map(addNDVI);
+                   
+print(NDVI_collection);
+
+Map.addLayer(NDVI_collection.reduce(ee.Reducer.max()))
+
+
+// Difference in days between start and finish
+var diff = endDate.difference(startDate, 'day');
+print(diff)
+
+// Make a list of all dates
+var range = ee.List.sequence(0, diff.subtract(1), 15).map(function(day){return startDate.advance(day,'day')});
+print(range);
+
+// Funtion for iteraton over the range of dates
+var ten_day_max_mosaics = function(date, newlist) {
+  // Cast
+  date = ee.Date(date);
+  
+  //var d_milli = ee.Date(date.millis());
+  var d_milli = date.millis();
+  newlist = ee.List(newlist);
+
+  // Filter collection between date and the next day //.select('NDVI') .select('RDVI') .select([ 'GNDVI', 'NDMI',  'CI_GREEN', 'CI_RED'])  .select(['NDVI', 'GNDVI', 'NDMI', 'RDVI', 'MASAVI', 'OSAVI', 'CI_GREEN', 'CI_RED', 'MSR', 'RVI'])
+  var filtered = NDVI_collection.filterDate(date, date.advance(15,'day')).select([ 'GNDVI', 'NDMI',  'CI_GREEN', 'CI_RED']) .set('system:time_start',d_milli);//.format('yyyy-MM-dd')
+
+  // Make the mosaic
+  var image = ee.Image(filtered.reduce(ee.Reducer.max()).clip(roi)).set('system:time_start',d_milli)//.format('yyyy-MM-dd')//.rename(ee.String('NDVI_').cat(d_milli.format('yyyy-MM-dd')));
+
+  // Add the mosaic to a list only if the collection has images
+  //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+  return ee.List(newlist.add(image));
+  
+};
+
+// Iterate over the range to make a new list, and then cast the list to an imagecollection
+var newcol = ee.ImageCollection(ee.List(range.iterate(ten_day_max_mosaics, ee.List([]))));
+print(newcol);
+
+
+
+//var final_col = newcol.map(onebandcount);
+
+var date_list1 = final_col.reduceColumns(ee.Reducer.toList(), ["system:time_start"]).get('list').getInfo();
+ 
+print(date_list1);
+
+
+
+var num_date = final_col.size().getInfo();
+print(num_date);
+
+var NDVI_stack = stackCollection(final_col);
+
+print(final_col.first())
+
+var filename = nam + "_all_indices_paddy_heading_rdvi"
+var fd = 'HR_RF_indicies'
+
+
+// Export Sentinel VH VV image as TIFF file 
+Export.image.toDrive({
+  image: final_col.first(), 
+  description: filename,
+  fileNamePrefix:  filename,
+  region: roi, 
+  folder: fd,
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});
+
+
+
+
+
+

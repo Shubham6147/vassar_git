@@ -1,0 +1,28 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var sample_pt = /* color: #d63000 */ee.Geometry.Point([-115.9393970337876, 33.442508454862065]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+var aoi = sample_pt.buffer(15).bounds()
+
+Map.addLayer(aoi)
+Map.centerObject(aoi)
+var s2 = ee.ImageCollection("COPERNICUS/S2");
+var filtered_img = s2.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 10))
+                  .filter(ee.Filter.date('2019-03-15', '2020-03-21'))
+                  .filter(ee.Filter.bounds(aoi))
+                  
+print(filtered_img)
+
+var sampled_pixels = filtered_img.first().sampleRegions({
+  collection: aoi,
+  scale: 10,
+  geometries: true
+})
+
+print(sampled_pixels)
+
+print('A feature per pixel (at given scale) in each region', sampled_pixels);
+Map.addLayer(sampled_pixels, {color: 'purple'}, 'fcPolygonSamp');
+
+
+Export.table.toDrive(sampled_pixels) // CSV by default

@@ -1,0 +1,103 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[80.10641346549737, 15.788712783281087],
+          [80.10641346549737, 15.368050198638741],
+          [80.3439928112005, 15.368050198638741],
+          [80.3439928112005, 15.788712783281087]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+
+var stackCollection = function(collection) {
+  // Create an initial image.
+  var first = ee.Image(collection.first()).select([]);
+
+  // Write a function that appends a band to an image.
+  var appendBands = function(image, previous) {
+    return ee.Image(previous).addBands(image);
+  };
+  return ee.Image(collection.iterate(appendBands, first));
+};
+
+// function for cloud masking
+function maskCloudAndShadows(image) {
+  var cloudProb = image.select('MSK_CLDPRB');
+  var snowProb = image.select('MSK_SNWPRB');
+  var cloud = cloudProb.lt(5);
+  var snow = snowProb.lt(5);
+  var scl = image.select('SCL'); 
+  var shadow = scl.eq(3); // 3 = cloud shadow
+  var cirrus = scl.eq(10); // 10 = cirrus
+  // Cloud probability less than 5% or cloud shadow classification
+  var mask = (cloud.and(snow)).and(cirrus.neq(1)).and(shadow.neq(1));
+  return image.updateMask(mask);
+}
+
+var addNDWI = function(image) {
+  var ndvi = image.normalizedDifference(['B3', 'B8']).rename('NDWI');
+  return image.addBands(ndvi.multiply(10000).toInt16());
+};
+
+var startDate = ee.Date('2020-06-04');
+var endDate = ee.Date('2021-06-02');
+
+// Define an example collection.
+var collection = ee.ImageCollection('COPERNICUS/S2_SR')
+                  .filter(ee.Filter.eq('MGRS_TILE', '44PMC')) //44QQG, 44QQF, 44QPF, 44QPG
+                  //.filter(ee.Filter.eq("SPACECRAFT_NAME", "Sentinel-2A"))
+                  .filter(ee.Filter.eq("SENSING_ORBIT_NUMBER", 119))
+                  .filterDate(startDate, endDate)
+                  .filterBounds(geometry)
+                  .filter(ee.Filter.lt('CLOUD_COVERAGE_ASSESSMENT', 30))
+                  //.map(maskCloudAndShadows)
+                  .map(addNDWI);
+                   
+print(collection.select("NDWI"));
+
+//Map.addLayer(collection.select("NDWI"))
+
+
+// Difference in days between start and finish
+var diff = endDate.difference(startDate, 'day');
+
+print(diff)
+
+// Make a list of all dates
+var range_2 = ee.List.sequence(0, diff.subtract(1), 10).map(function(day){return startDate.advance(day,'day')});
+print(range_2);
+
+// Funtion for iteraton over the range of dates
+var ten_day_max = function(date, newlist) {
+  // Cast
+  date = ee.Date(date);
+  var d_milli = ee.Date(date.millis());
+  newlist = ee.List(newlist);
+
+  // Filter collection between date and the next day
+  var filtered = collection.filterDate(date, date.advance(10,'day')).select('NDWI')//.set('system:time_start',d_milli.format('yyyy-MM-dd'));
+
+  // Make the mosaic
+  var image = ee.Image(filtered.reduce(ee.Reducer.max()).clip(geometry)).set('system:time_start',d_milli.format('yyyy-MM-dd')).rename(ee.String('NDWI_').cat(d_milli.format('yyyy-MM-dd')));
+  
+  image = image.toInt16()
+  // Add the mosaic to a list only if the collection has images
+  //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+  return ee.List(newlist.add(image));
+
+};
+
+// Iterate over the range to make a new list, and then cast the list to an imagecollection
+var ndwi_10days_max = ee.ImageCollection(ee.List(range_2.iterate(ten_day_max, ee.List([]))));
+print(ndwi_10days_max);
+
+
+var NDVI_stack_2 = stackCollection(collection.select("NDWI"));
+
+Map.addLayer(NDVI_stack_2)

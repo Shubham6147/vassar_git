@@ -1,0 +1,27 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var tamilnadu = ee.FeatureCollection("users/shubhampawar/Tamilnadu_State_boundary"),
+    Tamilnadu_KTCC = ee.FeatureCollection("users/shubhampawar/Tamilnadu_KTCC_District_boundary_dissolve");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var GlobalSurfaceWater = ee.Image("JRC/GSW1_4/GlobalSurfaceWater").select("occurrence")
+Map.addLayer(GlobalSurfaceWater)
+
+var mask = GlobalSurfaceWater.gte(1).selfMask()
+Map.addLayer(mask)
+
+var tamilnadu_10km = tamilnadu.geometry().buffer(1000)
+
+Map.addLayer(tamilnadu_10km)
+
+Export.image.toDrive({
+  image: mask.clip(tamilnadu_10km),
+  folder : "vassar_labs/Tamilnadu_10km_GlobalSurfaceWater",
+  description: '221031_Tamilnadu_10km_GlobalSurfaceWater_SP_V1',
+  fileNamePrefix: '221031_Tamilnadu_10km_GlobalSurfaceWater_SP_V1',
+  region: tamilnadu_10km, 
+  scale: 30,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF',
+  formatOptions: {cloudOptimized: true},
+  skipEmptyTiles: true
+});
