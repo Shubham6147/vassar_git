@@ -8,8 +8,13 @@ aoi = gpd.read_file(r'D:/aus_v2/iwm_0.001_aus_uuid_part1_north_selected.shp')
 
 
 
+aoi = aoi[aoi['uuid'] == '28372be8-345d-40f1-9f51-0e5ad00b2c04']
+
 
 for index, row in aoi.iterrows():
+
+    print(index)
+
     polygons = []
     uuid_list = []
 
@@ -43,5 +48,5 @@ for index, row in aoi.iterrows():
     grid = grid.set_crs(aoi.crs)
 
 
-    with fiona.Env(OSR_WKT_FORMAT="WKT2_2018"):
-        grid.to_file(out_filename)
+    #with fiona.Env(OSR_WKT_FORMAT="WKT2_2018"):
+    #    grid.to_file(out_filename)

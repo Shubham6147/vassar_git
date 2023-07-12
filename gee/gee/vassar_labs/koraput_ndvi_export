@@ -1,0 +1,600 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.4678709929397, 19.482975107788086],
+          [82.4678709929397, 19.08373259716663],
+          [83.36188344411157, 19.08373259716663],
+          [83.36188344411157, 19.482975107788086]]], null, false),
+    geometry2 = 
+    /* color: #98ff00 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.40738906559092, 19.957002318638548],
+          [82.40738906559092, 19.45019387974898],
+          [83.59940566715342, 19.45019387974898],
+          [83.59940566715342, 19.957002318638548]]], null, false),
+    geometry3 = 
+    /* color: #0b4a8b */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.58042373355967, 20.330894798339674],
+          [82.58042373355967, 19.90277842260477],
+          [83.89054336246592, 19.90277842260477],
+          [83.89054336246592, 20.330894798339674]]], null, false),
+    geometry4 = 
+    /* color: #ffc82d */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[83.13523330387217, 20.547082896988574],
+          [83.13523330387217, 20.25618801261799],
+          [83.85483779605967, 20.25618801261799],
+          [83.85483779605967, 20.547082896988574]]], null, false),
+    geometry5 = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[81.98071831690058, 19.338934582276703],
+          [81.98071831690058, 18.385081993858737],
+          [82.44489068018183, 18.385081993858737],
+          [82.44489068018183, 19.338934582276703]]], null, false),
+    geometry6 = 
+    /* color: #98ff00 */
+    /* shown: false */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.36249321924433, 19.310424392401753],
+          [82.36249321924433, 18.13468753648216],
+          [82.89807671533808, 18.13468753648216],
+          [82.89807671533808, 19.310424392401753]]], null, false),
+    geometry7 = 
+    /* color: #0b4a8b */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.85962456690058, 19.31560843327547],
+          [82.85962456690058, 18.241670994511548],
+          [83.20294732080683, 18.241670994511548],
+          [83.20294732080683, 19.31560843327547]]], null, false),
+    geometry8 = 
+    /* color: #ffc82d */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[83.16724175440058, 19.346709224912217],
+          [83.16724175440058, 18.564828932625115],
+          [83.52979058252558, 18.564828932625115],
+          [83.52979058252558, 19.346709224912217]]], null, false),
+    geometry9 = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.36615456270026, 19.310565406136227],
+          [82.36615456270026, 18.934287224229],
+          [82.62570656465338, 18.934287224229],
+          [82.62570656465338, 19.310565406136227]]], null, false),
+    geometry10 = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.37052042602576, 18.976686074264837],
+          [82.37052042602576, 18.59184362580375],
+          [82.62595255493201, 18.59184362580375],
+          [82.62595255493201, 18.976686074264837]]], null, false),
+    geometry11 = 
+    /* color: #98ff00 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.6038229928939, 19.310793127050374],
+          [82.6038229928939, 18.947504782188833],
+          [82.8784811960189, 18.947504782188833],
+          [82.8784811960189, 19.310793127050374]]], null, false),
+    geometry12 = 
+    /* color: #0b4a8b */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.6148093210189, 18.96568812889894],
+          [82.6148093210189, 18.591233882725614],
+          [82.87573461398765, 18.591233882725614],
+          [82.87573461398765, 18.96568812889894]]], null, false),
+    geometry13 = 
+    /* color: #ffc82d */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.35720604526365, 18.626513286269947],
+          [82.35720604526365, 18.32693841504868],
+          [82.6346108304199, 18.32693841504868],
+          [82.6346108304199, 18.626513286269947]]], null, false),
+    geometry14 = 
+    /* color: #00ffff */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.62637108432615, 18.608293284075575],
+          [82.62637108432615, 18.26956899067507],
+          [82.90652245151365, 18.26956899067507],
+          [82.90652245151365, 18.608293284075575]]], null, false),
+    geometry15 = 
+    /* color: #bf04c2 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[82.4643227444824, 18.35040224558451],
+          [82.4643227444824, 18.131283032709387],
+          [82.8543373929199, 18.131283032709387],
+          [82.8543373929199, 18.35040224558451]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+
+var od_selected = ee.FeatureCollection("users/pawarshubham60/OD_selected_district");
+var koraput = ee.FeatureCollection(od_selected).filter(ee.Filter.eq('DIST', "Koraput")).geometry().buffer(10000)
+
+Map.addLayer(koraput)
+Map.centerObject(koraput,10)
+
+
+// creating empty image
+var empty_img = ee.Image();
+// matching the datatype of empty image to exported stack collection
+var empty_img_int16 = empty_img.toInt16();
+//print('empty_img_int16', empty_img_int16 );
+
+
+// checking for number of bands
+var count = empty_img_int16.bandNames().size();
+//print('count', count );
+
+// Function for checking image with band less than 1, and replacing it with empty band
+var onebandcount = function(image) {
+  return ee.Algorithms.If(ee.Number(image.bandNames().length()).lt(1),
+                          image.addBands(empty_img_int16), image);
+                          
+};
+
+var path = 1;
+if (path == 1){
+  var tile = '45QUC';
+  //var startDate = ee.Date('2019-10-30');
+  //var endDate = ee.Date('2020-06-30');
+  var startDate = ee.Date('2018-12-10');
+  var endDate = ee.Date('2022-03-11');
+}
+else{
+  var tile = '45QVC';
+  var startDate = ee.Date('2019-11-01');
+  var endDate = ee.Date('2020-06-30');
+}
+
+//var tile = '45QUC'; //if path = 2
+// Define a sample Region-of-Interest 
+//var roi = geometry4;
+// var roi = ee.FeatureCollection(Odisha_coast).filter(ee.Filter.eq('path', path)).filter(ee.Filter.eq('Name', tile));
+// var roi2 = ee.FeatureCollection(Jagtial);
+
+
+// function for cloud masking
+function maskCloudAndShadows(image) {
+  var cloudProb = image.select('MSK_CLDPRB');
+  var snowProb = image.select('MSK_SNWPRB');
+  var cloud = cloudProb.lt(5);
+  var snow = snowProb.lt(5);
+  var scl = image.select('SCL'); 
+  var shadow = scl.eq(3); // 3 = cloud shadow
+  var cirrus = scl.eq(10); // 10 = cirrus
+  // Cloud probability less than 5% or cloud shadow classification
+  var mask = (cloud.and(snow)).and(cirrus.neq(1)).and(shadow.neq(1));
+  return image.updateMask(mask);
+}
+
+
+
+/*
+// compute MSAVI2 using expression
+var msavi2 = composite.expression(
+  '(2 * NIR + 1 - sqrt(pow((2 * NIR + 1), 2) - 8 * (NIR - RED)) ) / 2', 
+  {
+    'NIR': composite.select('B8'), 
+    'RED': composite.select('B4')
+  }
+);
+*/
+// Calculate NDVI.
+var calculateNDVI = function(scene) {
+  // get a string representation of the date.
+  var dateString = ee.Date(scene.get('system:time_start')).format('yyyy-MM-dd');
+  var ndvi = scene.normalizedDifference(['B8', 'B4']);
+  var ndvi2 = ndvi.multiply(10000).toInt16();
+  return ndvi2.rename(dateString);
+};
+
+var addNDVI = function(image) {
+  var ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI');
+  return image.addBands(ndvi.multiply(10000).toInt16());
+};
+
+
+var startDate = ee.Date('2019-06-05');
+var endDate = ee.Date('2020-06-02');
+
+// Define an example collection.
+var collection = ee.ImageCollection('COPERNICUS/S2_SR')
+                  //.filter(ee.Filter.eq('MGRS_TILE', '44QPF')) //44QQG, 44QQF, 44QPF, 44QPG
+                  .filterDate(startDate, endDate)
+                  .filterBounds(koraput)
+                  //.filter(ee.Filter.lt('CLOUD_COVERAGE_ASSESSMENT', 10))
+                  //.map(maskCloudAndShadows)
+                  .map(addNDVI);
+                   
+print(collection);
+
+//Map.addLayer(collection)
+
+var NDVI_collection = collection.map(addNDVI);
+
+// Difference in days between start and finish
+var diff = endDate.difference(startDate, 'day');
+
+print(diff)
+
+// Make a list of all dates
+var range = ee.List.sequence(0, diff.subtract(1), 5).map(function(day){return startDate.advance(day,'day')});
+print(range);
+
+// Funtion for iteraton over the range of dates
+var day_mosaics = function(date, newlist) {
+  // Cast
+  date = ee.Date(date);
+  
+  var d_milli = ee.Date(date.millis());
+  newlist = ee.List(newlist);
+
+  // Filter collection between date and the next day
+  var filtered = NDVI_collection.filterDate(date, date.advance(1,'day')).select('NDVI').set('system:time_start',d_milli.format('yyyy-MM-dd'));
+
+  // Make the mosaic
+  var image = ee.Image(filtered.mosaic().clip(koraput)).set('system:time_start',d_milli.format('yyyy-MM-dd'))//.rename(ee.String('NDVI_').cat(d_milli.format('yyyy-MM-dd')));
+
+  // Add the mosaic to a list only if the collection has images
+  //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+  return ee.List(newlist.add(image));
+
+};
+
+// Iterate over the range to make a new list, and then cast the list to an imagecollection
+var newcol = ee.ImageCollection(ee.List(range.iterate(day_mosaics, ee.List([]))));
+print(newcol);
+
+var stackCollection = function(collection) {
+  // Create an initial image.
+  var first = ee.Image(collection.first()).select([]);
+
+  // Write a function that appends a band to an image.
+  var appendBands = function(image, previous) {
+    return ee.Image(previous).addBands(image);
+  };
+  return ee.Image(collection.iterate(appendBands, first));
+};
+
+var final_col = newcol.map(onebandcount);
+
+var date_list1 = final_col.reduceColumns(ee.Reducer.toList(), ["system:time_start"]).get('list').getInfo();
+ 
+print(date_list1);
+
+
+
+var num_date = final_col.size().getInfo();
+print(num_date);
+var NDVI_stack = stackCollection(final_col);
+//var label = "band " + num_date-3;
+Map.addLayer(ee.FeatureCollection(koraput));
+Map.addLayer(NDVI_stack);
+
+
+// Difference in days between start and finish
+var diff = endDate.difference(startDate, 'day');
+
+print(diff)
+
+// Make a list of all dates
+var range_2 = ee.List.sequence(0, diff.subtract(1), 10).map(function(day){return startDate.advance(day,'day')});
+print(range_2);
+
+// Funtion for iteraton over the range of dates
+var ten_day_max = function(date, newlist) {
+  // Cast
+  date = ee.Date(date);
+  
+  var d_milli = ee.Date(date.millis());
+  newlist = ee.List(newlist);
+
+  // Filter collection between date and the next day
+  var filtered = final_col.filterDate(date, date.advance(10,'day')) //.select('NDVI').set('system:time_start',d_milli.format('yyyy-MM-dd'));
+
+  // Make the mosaic
+  var image = ee.Image(filtered.reduce(ee.Reducer.max()).clip(koraput)).set('system:time_start',d_milli.format('yyyy-MM-dd')).rename(ee.String('NDVI_10_').cat(d_milli.format('yyyy-MM-dd')));
+  
+  image = image.toInt16()
+  // Add the mosaic to a list only if the collection has images
+  //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+  return ee.List(newlist.add(image));
+
+};
+
+// Iterate over the range to make a new list, and then cast the list to an imagecollection
+var ndvi_10days_max = ee.ImageCollection(ee.List(range_2.iterate(ten_day_max, ee.List([]))));
+print(ndvi_10days_max);
+
+
+var NDVI_stack_2 = stackCollection(ndvi_10days_max);
+//var label = "band " + num_date-3;
+//Map.addLayer(ee.FeatureCollection(koraput));
+Map.addLayer(NDVI_stack_2,{},"NDVI_stack_2");
+
+
+//Map.addLayer(ndvi_10days_max,{}, "ndvi_10days_max")
+// var num_bands = ee.Number(num_date)
+
+// // Make a list of all dates
+// var range_3 = ee.List.sequence(0,num_bands.subtract(1), 2) //.map(function(day){return startDate.advance(day,'day')});
+// print(range_3);
+
+// // Funtion for iteraton over the range of dates
+// var ten_day_max_2 = function(band_1, newlist) {
+//   // Cast
+//   band_1 = ee.Number(band_1)
+//   var band_2 = band_1.add(1)
+  
+//   // var d_milli = ee.Date(date.millis());
+//   newlist = ee.List(newlist);
+
+//   // Filter collection between date and the next day
+//   var filtered = ee.ImageCollection([ee.Image(NDVI_stack.select(band_1)),ee.Image(NDVI_stack.select(band_2))])
+  
+//   //var filtered = final_col.filterDate(date, date.advance(10,'day'))  //.select('NDVI').set('system:time_start',d_milli.format('yyyy-MM-dd'));
+
+//   // Make the mosaic
+//   var image = ee.Image(filtered.reduce(ee.Reducer.max()).clip(koraput)) //.set('system:time_start',d_milli.format('yyyy-MM-dd')).rename(ee.String('NDVI_').cat(d_milli.format('yyyy-MM-dd')));
+
+//   // Add the mosaic to a list only if the collection has images
+//   //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+//   return ee.List(newlist.add(image));
+
+// };
+
+// // Iterate over the range to make a new list, and then cast the list to an imagecollection
+// var ndvi_10days_max_2 = ee.ImageCollection(ee.List(range_3.iterate(ten_day_max_2, ee.List([]))));
+
+// print(ndvi_10days_max_2);
+
+
+
+// var NDVI_stack_2 = stackCollection(ndvi_10days_max_2);
+// //var label = "band " + num_date-3;
+// Map.addLayer(ee.FeatureCollection(koraput));
+// Map.addLayer(NDVI_stack_2);
+
+
+
+
+
+// Export.image.toDrive({
+//   image: NDVI_stack_2.clip(geometry5),
+//   folder : "vassar_labs/koraput/2021",
+//   description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_2021_Part5',
+//   fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_2021_Part5',
+//   region: geometry5, 
+//   scale: 10,
+//   crs: 'EPSG:4326',
+//   maxPixels: 1.0E13,
+//   fileFormat: 'GeoTIFF',
+//   formatOptions: {cloudOptimized: true},
+//   skipEmptyTiles: true
+// });
+
+
+Export.image.toDrive({
+  image: NDVI_stack_2.clip(geometry9),
+  folder : "vassar_labs/koraput/1920",
+  description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part9',
+  fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part9',
+  region: geometry9, 
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF',
+  formatOptions: {cloudOptimized: true},
+  skipEmptyTiles: true
+});
+
+Export.image.toDrive({
+  image: NDVI_stack_2.clip(geometry10),
+  folder : "vassar_labs/koraput/1920",
+  description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part10',
+  fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part10',
+  region: geometry10, 
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF',
+  formatOptions: {cloudOptimized: true},
+  skipEmptyTiles: true
+});
+
+Export.image.toDrive({
+  image: NDVI_stack_2.clip(geometry11),
+  folder : "vassar_labs/koraput/1920",
+  description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part11',
+  fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part11',
+  region: geometry11, 
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF',
+  formatOptions: {cloudOptimized: true},
+  skipEmptyTiles: true
+});
+
+Export.image.toDrive({
+  image: NDVI_stack_2.clip(geometry12),
+  folder : "vassar_labs/koraput/1920",
+  description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part12',
+  fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part12',
+  region: geometry12, 
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF',
+  formatOptions: {cloudOptimized: true},
+  skipEmptyTiles: true
+});
+
+// Export.image.toDrive({
+//   image: NDVI_stack_2.clip(geometry13),
+//   folder : "vassar_labs/koraput/1920",
+//   description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part13',
+//   fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part13',
+//   region: geometry13, 
+//   scale: 10,
+//   crs: 'EPSG:4326',
+//   maxPixels: 1.0E13,
+//   fileFormat: 'GeoTIFF',
+//   formatOptions: {cloudOptimized: true},
+//   skipEmptyTiles: true
+// });
+
+// Export.image.toDrive({
+//   image: NDVI_stack_2.clip(geometry14),
+//   folder : "vassar_labs/koraput/1920",
+//   description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part14',
+//   fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part14',
+//   region: geometry14, 
+//   scale: 10,
+//   crs: 'EPSG:4326',
+//   maxPixels: 1.0E13,
+//   fileFormat: 'GeoTIFF',
+//   formatOptions: {cloudOptimized: true},
+//   skipEmptyTiles: true
+// });
+
+// Export.image.toDrive({
+//   image: NDVI_stack_2.clip(geometry15),
+//   folder : "vassar_labs/koraput/1920",
+//   description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part15',
+//   fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_1920_Part15',
+//   region: geometry15, 
+//   scale: 10,
+//   crs: 'EPSG:4326',
+//   maxPixels: 1.0E13,
+//   fileFormat: 'GeoTIFF',
+//   formatOptions: {cloudOptimized: true},
+//   skipEmptyTiles: true
+// });
+
+// Export.image.toDrive({
+//   image: NDVI_stack_2.clip(geometry7),
+//   folder : "vassar_labs/koraput/2021",
+//   description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_2021_Part7_2',
+//   fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_2021_Part7_2',
+//   region: geometry7, 
+//   scale: 10,
+//   crs: 'EPSG:4326',
+//   maxPixels: 1.0E13,
+//   fileFormat: 'GeoTIFF',
+//   formatOptions: {cloudOptimized: true},
+//   skipEmptyTiles: true
+// });
+
+// Export.image.toDrive({
+//   image: NDVI_stack_2.clip(geometry8),
+//   folder : "vassar_labs/koraput/2021",
+//   description: 'koraput_10km_buffer_S2_SR_NDVI_44QP_Part8',
+//   fileNamePrefix: 'koraput_10km_buffer_S2_SR_NDVI_44QP_Part8',
+//   region: geometry8, 
+//   scale: 10,
+//   crs: 'EPSG:4326',
+//   maxPixels: 1.0E13,
+//   fileFormat: 'GeoTIFF',
+//   formatOptions: {cloudOptimized: true},
+//   skipEmptyTiles: true
+// });
+
+
+
+// var featureCollection = ee.FeatureCollection(date_list1
+//                         .map(function(element){
+//                         return ee.Feature(null,{prop:element})}));
+
+// //print('featureCollection_dates',featureCollection);
+
+// Export.table.toDrive({
+//     collection: featureCollection,
+//     description: 'Jagtial_test_NDVI_csv',
+//     fileNamePrefix: 'Jagtial_test_S2_SR-NDVI',
+//     folder: 'Jagtial_test_NDVI_CSV',
+//     fileFormat: 'CSV'
+// });

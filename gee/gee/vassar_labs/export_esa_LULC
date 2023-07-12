@@ -1,0 +1,34 @@
+var dataset = ee.ImageCollection('ESA/WorldCover/v200').first();
+
+
+var bound_FC = ee.FeatureCollection("projects/ee-shubhampawar/assets/mallapur_bound")
+var roi = ee.FeatureCollection(bound_FC).geometry().buffer(5000)
+
+
+var esa_clipped = dataset.clip(roi)
+
+var visualization = {
+  bands: ['Map'],
+};
+
+Map.centerObject(esa_clipped);
+
+Map.addLayer(esa_clipped, visualization, 'Landcover');
+
+
+var fileName = 'Mallapur_ESA_LULC_V200'
+var fd_name = 'Mallapur_crop_class'
+
+
+// Export Sentinel VH VV image as TIFF file 
+Export.image.toDrive({
+  image: esa_clipped, 
+  description: fileName,
+  fileNamePrefix:  fileName,
+  region: roi.bounds(), 
+  folder: fd_name ,
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});

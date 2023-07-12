@@ -1,0 +1,45 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var KTCC = ee.FeatureCollection("users/shubhampawar/Tamilnadu_KTCC_District_boundary_dissolve");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var start = ee.Date.fromYMD(2013,01,01);
+var end   = ee.Date.fromYMD(2022,11,01);
+
+var fivebandcount = function(image) {
+  return ee.Algorithms.If(ee.Number(image.bandNames().length()).gte(5),
+                          image, null);
+                         
+};
+
+var data_india = //ee.ImageCollection([// mosaic the L5 and L8 collection with each other
+      //ee.ImageCollection("LANDSAT/LT05/C02/T1_L2")
+      ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA")
+    .filterDate(start, end)
+    .filterBounds(KTCC)
+    .filterMetadata('CLOUD_COVER', 'less_than', 30)
+    .select(['B3', 'B4', 'B5', 'B6', 'B7',])
+
+
+print(data_india)
+Map.addLayer(data_india)
+
+
+var n_months = end.difference(start,'month').round();
+print(n_months)
+
+var months = ee.List.sequence(0, n_months);
+
+var refined_coll = months.map(function(d) {
+  
+  var month_mosaic = data_india.filterDate(start.advance(d, 'month'), start.advance(ee.Number(d).add(1), 'month')).reduce(ee.Reducer.percentile([30])).clip(KTCC).set('system:time_start', start.advance(d, 'month')).rename(['B3', 'B4', 'B5', 'B6', 'B7']);
+  
+  return month_mosaic;
+});
+
+var refined_coll_mosaic = ee.ImageCollection(refined_coll)
+
+print(refined_coll_mosaic);
+
+
+var filter_refined_coll_mosaic = ee.ImageCollection(refined_coll_mosaic.map(fivebandcount, true))
+
+print(filter_refined_coll_mosaic)

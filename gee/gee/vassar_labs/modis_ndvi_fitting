@@ -1,0 +1,193 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var aoi = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[79.49958128823214, 10.96819543378886],
+          [79.49958128823214, 10.51485603444996],
+          [79.78522581948214, 10.51485603444996],
+          [79.78522581948214, 10.96819543378886]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var addNDWI = function(image) {
+  var ndvi = image.normalizedDifference(['sur_refl_b02', 'sur_refl_b01']).rename('NDVI');
+  return image.addBands(ndvi.multiply(10000).toInt16());
+};
+
+var modis_terra = ee.ImageCollection('MODIS/061/MOD09Q1')
+                  .filter(ee.Filter.date('2003-01-01', '2022-12-31'))
+                  .map(addNDWI);
+              
+              
+var modis_acqua = ee.ImageCollection("MODIS/061/MYD09Q1")
+                  .filter(ee.Filter.date('2003-01-01', '2022-12-31'))
+                  .map(addNDWI)
+
+print(modis_terra)
+
+
+// Make a list of all dates
+var range = modis_terra.aggregate_array('system:time_start')
+            .map(function(x){return ee.Date(x)})
+    
+    
+print(range);
+
+
+// Funtion for iteraton over the range of dates
+var modis_merging = function(date, newlist) {
+  // Cast
+  date = ee.Date(date);
+  newlist = ee.List(newlist);
+
+  // Filter collection between date and the next day
+  var modis_terra_filtered = modis_terra.filterDate(date, date.advance(1,'day')).select('NDVI');
+  var modis_acqua_filtered = modis_acqua.filterDate(date, date.advance(1,'day')).select('NDVI');
+
+  var merged_colletion = modis_terra_filtered.merge(modis_acqua_filtered)
+
+  // Taking NDVI Max from both the images.
+  var image = ee.Image(merged_colletion.reduce(ee.Reducer.max())).set('system:time_start',date.format('yyyy-MM-dd')).rename('NDVI');
+
+  // Add the mosaic to a list only if the collection has images
+  //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+  return ee.List(newlist.add(image));
+
+};
+
+
+// Iterate over the range to make a new list, and then cast the list to an imagecollection
+var modis_merged = ee.ImageCollection(ee.List(range.iterate(modis_merging, ee.List([]))));
+//print(modis_merged.filterDate('2003-06-01', '2004-05-31'));
+
+
+//==================================================================================================================
+// modis collection smoothning for removing cloud or any anomoly.
+// modis collection smoothning for removing cloud or any anomoly.
+// modis collection smoothning for removing cloud or any anomoly.
+//==================================================================================================================
+//print(modis.limit(2))
+var modis = modis_merged
+// Part 1: Set up a regularly sampled MODIS time series
+
+var start_date = '2003-01-01'
+var end_date = '2022-12-31'  // the Future
+
+// Add predictors for SG fitting, using date difference
+// We prepare for order 3 fitting, but can be adapted to lower order fitting later on
+var modis_res = modis.filterDate(start_date, end_date).filterBounds(aoi).map(function(img) 
+{
+  var dstamp = ee.Date(img.get('system:time_start'))
+  var ddiff = dstamp.difference(ee.Date(start_date), 'hour')
+  img = img.select('NDVI').set('date', dstamp)
+  return img.addBands(ee.Image(1).toFloat().rename('constant')).
+    addBands(ee.Image(ddiff).toFloat().rename('t')).
+    addBands(ee.Image(ddiff).pow(ee.Image(2)).toFloat().rename('t2')).
+    addBands(ee.Image(ddiff).pow(ee.Image(3)).toFloat().rename('t3'))
+})
+
+print(modis_res)
+// Step 2: Set up Savitzky-Golay smoothing
+var window_size = 9
+var half_window = (window_size - 1)/2
+
+// Define the axes of variation in the collection array.
+var imageAxis = 0;
+var bandAxis = 1;
+
+// Set polynomial order
+var order = 3
+var coeffFlattener = [['constant', 'x', 'x2', 'x3']]
+var indepSelectors = ['constant', 't', 't2', 't3']
+
+// Change to order = 2 as follows:
+//var order = 2
+//var coeffFlattener = [['constant', 'x', 'x2']]
+//var indepSelectors = ['constant', 't', 't2']
+
+// Convert the collection to an array.
+var array = modis_res.toArray();
+
+// Solve
+function getLocalFit(i) {
+  // Get a slice corresponding to the window_size of the SG smoother
+  var subarray = array.arraySlice(imageAxis, ee.Number(i).int(), ee.Number(i).add(window_size).int())
+  var predictors = subarray.arraySlice(bandAxis, 1, 1 + order + 1)
+  var response = subarray.arraySlice(bandAxis, 0, 1); // NDVI
+  var coeff = predictors.matrixSolve(response)
+
+  coeff = coeff.arrayProject([0]).arrayFlatten(coeffFlattener)
+  return coeff  
+}
+
+// For the remainder, use modis_res as a list of images
+modis_res = modis_res.toList(modis_res.size())
+var runLength = ee.List.sequence(0, modis_res.size().subtract(window_size))
+
+// Run the SG solver over the series, and return the smoothed image version
+var sg_series = runLength.map(function(i) {
+  var ref = ee.Image(modis_res.get(ee.Number(i).add(half_window)))
+  return getLocalFit(i).multiply(ref.select(indepSelectors)).reduce(ee.Reducer.sum()).copyProperties(ref)
+})
+
+print(sg_series)
+// Part 3: Generate some output
+
+// 3A. Get an example original image and its SG-ed version
+var NDVI = (ee.Image(modis_res.get(41)).select('NDVI'))
+var NDVIsg = (ee.Image(sg_series.get(41-half_window)))  // half-window difference in index
+
+// Create a colour composite of the image (RED)
+// compared to its Savitzky-Golayed self (GREEN)
+// and the difference between the 2 (BLUE)
+Map.addLayer(ee.Image(NDVI).addBands(NDVIsg).addBands(ee.Image(NDVI).subtract(NDVIsg)).clip(aoi),
+  {min: [0, 0, -0.5], max: [1, 1, 0.5]}, 'RGB = NDVI-sgNDVI-diff')
+
+// 3B. Now get a profile for a buffered point.
+// Make sure to place the point in the centre of a homogenous area (reduces noise)
+var pt = ee.Geometry.Point(79.694588612451,10.783324801287298).buffer(500)
+
+// Build a stack for all images in the collection
+function stack(i1, i2)
+{
+  return ee.Image(i1).addBands(ee.Image(i2))
+}
+
+var s1orig = modis_res.slice(1).iterate(stack, modis_res.get(0))
+print(s1orig)
+
+var s1sged = sg_series.slice(1).iterate(stack, sg_series.get(0))
+print(s1sged)
+
+// Get samples from both series
+var y = ee.Image(s1orig).select(['NDVI(..)*']).reduceRegion(ee.Reducer.mean(), pt,10).values()
+var xlabels = ee.Image(s1orig).select(['t(..)*']).reduceRegion(ee.Reducer.first(), pt,10).values()
+var smoothy = ee.Image(s1sged).select(['sum(..)*']).reduceRegion(ee.Reducer.mean(), pt,10).values()
+
+// NB: convert to dB (this actually exaggarates differences between raw points and the smooth series somewhat)
+// NB2 the first and last half_window values of the smoothy are simply repeated from the start and end values
+//y = y.map(function(f) { return ee.Number(f).log10().multiply(10)})
+xlabels = xlabels.map(function(f) { return ee.Number(f).divide(24.0*365.25)}).sort()
+
+//smoothy = smoothy.map(function(f) { return ee.Number(f).log10().multiply(10)})
+
+// Chart
+var yValues = ee.Array.cat([y, ee.List.repeat(smoothy.get(0), half_window).cat(smoothy).cat(ee.List.repeat(smoothy.get(-1), half_window))], 1);
+
+var chart = ui.Chart.array.values(yValues, 0, xlabels).setSeriesNames(['Raw', 'Smoothed']).setOptions(
+  {
+    title: 'Savitsky-Golay smoothing (order = ' + order + ', window_size = ' + window_size + ')',
+    hAxis: {title: 'Time (years after ' + start_date + ')'}, vAxis: {title: 'NDVI'},
+    legend: null,
+    series: {
+      0: { lineWidth: 0},
+      1: { lineWidth: 2, pointSize: 0, color: 'red' }}
+  })
+print(chart)
+
+Map.centerObject(aoi, 9)
+

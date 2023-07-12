@@ -1,0 +1,99 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var roi = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[77.51424684128479, 25.89566804881822],
+          [77.51424684128479, 16.653948678074226],
+          [89.55526246628479, 16.653948678074226],
+          [89.55526246628479, 25.89566804881822]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+
+var mod_lai = ee.ImageCollection("MODIS/061/MOD15A2H").select('Lai_500m'),
+    myd_lai = ee.ImageCollection("MODIS/061/MYD15A2H").select('Lai_500m');
+
+
+var stackCollection = function(collection) {
+  // Create an initial image.
+    var first = ee.Image(collection.first()).select([]);
+
+
+  // Write a function that appends a band to an image.
+    var appendBands = function(image, previous) {
+      return ee.Image(previous).addBands(image);
+    };
+    return ee.Image(collection.iterate(appendBands, first));
+};
+    
+
+var merged_col = mod_lai.merge(myd_lai).filterDate(ee.Date('2015-01-01'), ee.Date('20222-12-31'))
+
+var months = ee.List.sequence(1, 12);
+var years = ee.List.sequence(2015, 2022);
+
+var byMonthYear = ee.ImageCollection.fromImages(
+  years.map(function(y) {
+    return months.map(function (m) {
+      return merged_col
+        .filter(ee.Filter.calendarRange(y, y, 'year'))
+        .filter(ee.Filter.calendarRange(m, m, 'month'))
+        .median()
+        .set('month', m).set('year', y);
+  });
+}).flatten());
+
+print(byMonthYear)
+
+var month_mean = ee.ImageCollection.fromImages( 
+  months.map(function (m) {
+    return byMonthYear.filter(ee.Filter.equals('month', m))
+    .median()
+    .set('month', m)
+    
+  }))
+  
+print(month_mean)
+
+var month_max = ee.ImageCollection.fromImages( 
+  months.map(function (m) {
+    return byMonthYear.filter(ee.Filter.equals('month', m))
+    .max()
+    .set('month', m)
+    
+  }))
+  
+print(month_mean)
+
+var month_mean_stack = stackCollection(month_mean)
+var month_max_stack = stackCollection(month_max)
+
+
+
+Export.image.toDrive({
+  image: month_mean_stack.clip(roi),
+  description: 'OD_LAI_month_median_stack_modis',
+  fileNamePrefix:  'OD_LAI_month_median_stack_modis',
+  region: roi,
+  folder: 'OD_LAI',
+  scale: 500,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});
+
+Export.image.toDrive({
+  image: month_max_stack.clip(roi),
+  description: 'OD_LAI_month_max_stack_modis',
+  fileNamePrefix:  'OD_LAI_month_max_stack_modis',
+  region: roi,
+  folder: 'OD_LAI',
+  scale: 500,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});

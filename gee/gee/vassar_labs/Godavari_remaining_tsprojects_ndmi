@@ -1,0 +1,197 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var intersection1 = ee.FeatureCollection("projects/ee-shubhampawar/assets/sen2_index_fixed_geom_remain"),
+    intersection = ee.FeatureCollection("projects/ee-shubhampawar/assets/final_godawari_remains"),
+    table = ee.FeatureCollection("projects/ee-shubhampawar/assets/final_godawari_remains_2");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var all_parts = ee.List(["44QNE",	"44QMF",	"44QME",	"44QLG",	"44QLF",	"44QLE",
+                          "44QLD",	"44QKH",	"44QKG",	"44QKF",	"44QKE",	"44QKD",	
+                          "43QHV",	"43QHC",	"43QHB",	"43QHA",	"43QGV",	"43QGB",	
+                          "43QGA"])
+
+var startDate = ee.Date('2021-11-02');
+var endDate = ee.Date('2022-05-31');
+
+
+var tile = '43QHV'
+var files_names = 'Godavari_remaining_tsprojects_43QHV_2NOV_NDVI' 
+
+var od_selected = ee.FeatureCollection(intersection);
+//Map.addLayer(od_selected)
+var roi2 = ee.FeatureCollection(od_selected).filter(ee.Filter.eq('Name', tile)).geometry()
+print(roi2)
+Map.addLayer(roi2)
+Map.centerObject(roi2,8)
+
+// creating empty image
+var empty_img = ee.Image();
+// matching the datatype of empty image to exported stack collection
+var empty_img_int16 = empty_img.toInt16();
+//print('empty_img_int16', empty_img_int16 );
+
+
+// checking for number of bands
+var count = empty_img_int16.bandNames().size();
+//print('count', count );
+
+// Function for checking image with band less than 1, and replacing it with empty band
+var onebandcount = function(image) {
+  return ee.Algorithms.If(ee.Number(image.bandNames().length()).lt(1),
+                          image.addBands(empty_img_int16), image);
+                          
+};
+
+// var path = 1;
+// if (path == 1){
+//   var tile = '45QUC';
+//   //var startDate = ee.Date('2019-10-30');
+//   //var endDate = ee.Date('2020-06-30');
+//   var startDate = ee.Date('2018-12-10');
+//   var endDate = ee.Date('2022-03-11');
+// }
+// else{
+//   var tile = '45QVC';
+//   var startDate = ee.Date('2019-11-01');
+//   var endDate = ee.Date('2020-06-30');
+// }
+
+//var tile = '45QUC'; //if path = 2
+// Define a sample Region-of-Interest 
+//var roi = geometry4;
+// var roi = ee.FeatureCollection(Odisha_coast).filter(ee.Filter.eq('path', path)).filter(ee.Filter.eq('Name', tile));
+// var roi2 = ee.FeatureCollection(Jagtial);
+
+// function for cloud masking
+function maskCloudAndShadows(image) {
+  var cloudProb = image.select('MSK_CLDPRB');
+  var snowProb = image.select('MSK_SNWPRB');
+  var cloud = cloudProb.lt(5);
+  var snow = snowProb.lt(5);
+  var scl = image.select('SCL'); 
+  var shadow = scl.eq(3); // 3 = cloud shadow
+  var cirrus = scl.eq(10); // 10 = cirrus
+  // Cloud probability less than 5% or cloud shadow classification
+  var mask = (cloud.and(snow)).and(cirrus.neq(1)).and(shadow.neq(1));
+  return image.updateMask(mask);
+}
+/*
+// compute MSAVI2 using expression
+var msavi2 = composite.expression(
+  '(2 * NIR + 1 - sqrt(pow((2 * NIR + 1), 2) - 8 * (NIR - RED)) ) / 2', 
+  {
+    'NIR': composite.select('B8'), 
+    'RED': composite.select('B4')
+  }
+);
+*/
+// Calculate NDVI.
+var calculateNDVI = function(scene) {
+  // get a string representation of the date.
+  var dateString = ee.Date(scene.get('system:time_start')).format('yyyy-MM-dd');
+  var ndvi = scene.normalizedDifference(['B8', 'B4']);
+  var ndvi2 = ndvi.multiply(10000).toInt16();
+  return ndvi2.rename(dateString);
+};
+
+var addNDVI = function(image) {
+  var ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI');
+  return image.addBands(ndvi.multiply(10000).toInt16());
+};
+
+
+// Define an example collection.
+var collection = ee.ImageCollection('COPERNICUS/S2_SR')
+                   .filterDate(startDate, endDate)
+                   .filter(ee.Filter.eq('MGRS_TILE', tile))
+                   .filterBounds(roi2)
+                   //.filter(ee.Filter.lt('CLOUD_COVERAGE_ASSESSMENT', 10))
+                   //.map(maskCloudAndShadows)
+                   .map(addNDVI);
+                   
+print(collection);
+
+var NDVI_collection = collection.map(addNDVI);
+
+// Difference in days between start and finish
+var diff = endDate.difference(startDate, 'day');
+
+// Make a list of all dates
+var range = ee.List.sequence(0, diff.subtract(1), 5).map(function(day){return startDate.advance(day,'day')});
+print(range);
+
+// Funtion for iteraton over the range of dates
+var day_mosaics = function(date, newlist) {
+  // Cast
+  date = ee.Date(date);
+  
+  var d_milli = ee.Date(date.millis());
+  newlist = ee.List(newlist);
+
+  // Filter collection between date and the next day
+  var filtered = NDVI_collection.filterDate(date, date.advance(1,'day')).select('NDVI').set('system:time_start',d_milli.format('yyyy-MM-dd'));
+
+  // Make the mosaic
+  var image = ee.Image(filtered.mosaic().clip(roi2)).set('system:time_start',d_milli.format('yyyy-MM-dd')).rename(ee.String('NDVI_').cat(d_milli.format('yyyy-MM-dd')));
+
+  // Add the mosaic to a list only if the collection has images
+  //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+  return ee.List(newlist.add(image));
+
+};
+
+// Iterate over the range to make a new list, and then cast the list to an imagecollection
+var newcol = ee.ImageCollection(ee.List(range.iterate(day_mosaics, ee.List([]))));
+print(newcol);
+
+var stackCollection = function(collection) {
+  // Create an initial image.
+  var first = ee.Image(collection.first()).select([]);
+
+  // Write a function that appends a band to an image.
+  var appendBands = function(image, previous) {
+    return ee.Image(previous).addBands(image);
+  };
+  return ee.Image(collection.iterate(appendBands, first));
+};
+
+var final_col = newcol.map(onebandcount);
+
+var date_list1 = final_col.reduceColumns(ee.Reducer.toList(), ["system:time_start"]).get('list').getInfo();
+ 
+print(date_list1);
+
+var NDVI_stack = stackCollection(final_col);
+
+var num_date = final_col.size().getInfo();
+print(num_date);
+var label = "band " + num_date-3;
+
+Map.addLayer(ee.FeatureCollection(roi2));
+Map.addLayer(NDVI_stack.select(12), {palette: ["#7270ff", "#00FF00"]}, label);
+
+
+
+Export.image.toDrive({
+  image: NDVI_stack.clip(roi2), 
+  folder : "Godavari_remaining_tsprojects_NDVI",
+  description:  files_names ,
+  fileNamePrefix: files_names ,
+  region: roi2, 
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});
+
+  // var featureCollection = ee.FeatureCollection(date_list1
+  //                         .map(function(element){
+  //                         return ee.Feature(null,{prop:element})}));
+  
+  // //print('featureCollection_dates',featureCollection);
+  
+  // Export.table.toDrive({
+  //     collection: featureCollection,
+  //     description: 'Jagtial_test_NDVI_csv',
+  //     fileNamePrefix: 'Jagtial_test_S2_SR-NDVI',
+  //     folder: 'Jagtial_test_NDVI_CSV',
+  //     fileFormat: 'CSV'
+  // });

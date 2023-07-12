@@ -1,0 +1,65 @@
+var aoi = ee.FeatureCollection("users/shubhampawar/Tamilnadu_State_boundary");
+
+var batch = require('users/fitoprincipe/geetools:batch')
+
+var addNDWI = function(image) {
+  var ndvi = image.normalizedDifference(['sur_refl_b02', 'sur_refl_b01']).rename('NDVI');
+  return image.addBands(ndvi.multiply(10000).toInt16()).clip(aoi);
+};
+
+var modis_terra = ee.ImageCollection('MODIS/061/MOD09Q1')
+                  .filter(ee.Filter.date('2022-12-31', '2023-03-01'))
+                  .map(addNDWI);
+              
+              
+var modis_acqua = ee.ImageCollection("MODIS/061/MYD09Q1")
+                  .filter(ee.Filter.date('2022-12-31', '2023-03-01'))
+                  .map(addNDWI)
+
+print(modis_terra)
+
+
+// Make a list of all dates
+var range = modis_terra.aggregate_array('system:time_start')
+            .map(function(x){return ee.Date(x)})
+    
+    
+print(range);
+
+
+// Funtion for iteraton over the range of dates
+var modis_merging = function(date, newlist) {
+  // Cast
+  date = ee.Date(date);
+  newlist = ee.List(newlist);
+
+  // Filter collection between date and the next day
+  var modis_terra_filtered = modis_terra.filterDate(date, date.advance(1,'day')).select('NDVI');
+  var modis_acqua_filtered = modis_acqua.filterDate(date, date.advance(1,'day')).select('NDVI');
+
+  var merged_colletion = modis_terra_filtered.merge(modis_acqua_filtered)
+
+  // Taking NDVI Max from both the images.
+  var image = ee.Image(merged_colletion.reduce(ee.Reducer.max())).set('system:time_start',date.format('yyyy-MM-dd')).rename('NDVI');
+
+  // Add the mosaic to a list only if the collection has images
+  //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+  return ee.List(newlist.add(image));
+
+};
+
+
+// Iterate over the range to make a new list, and then cast the list to an imagecollection
+var modis_merged = ee.ImageCollection(ee.List(range.iterate(modis_merging, ee.List([]))));
+print(modis_merged);
+
+Map.addLayer(modis_merged.first())
+
+// // export collection to google drive
+// batch.Download.ImageCollection.toDrive(final_col, 'TN_MODIS_NDVI', {
+//   name: 'MODIS_NDVI_{system_date}',
+//   scale: 10,
+//   crs: 'EPSG:4326',
+//   type : 'int16',
+//   region: aoi.bounds().getInfo() // or geometry.getInfo()
+// })

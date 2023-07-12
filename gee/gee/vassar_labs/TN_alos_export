@@ -1,0 +1,24 @@
+
+var TN_Bound = ee.FeatureCollection("projects/ee-shubhampawar/assets/aus_north_part1").geometry() //.buffer(10000);
+
+var dataset = ee.ImageCollection('JAXA/ALOS/AW3D30/V3_2');
+var elevation = dataset.filterBounds(TN_Bound)
+                       .select('DSM')
+                       .reduce(ee.Reducer.min())
+                       .clip(TN_Bound);
+                       
+Map.centerObject(TN_Bound,10)                     
+Map.addLayer(elevation)
+
+
+Export.image.toDrive({
+  image: elevation, 
+  description: "AUS_North_1_elevation_alos_gee",
+  fileNamePrefix:  "AUS_North_1_elevation_alos_gee",
+  region: TN_Bound, 
+  folder: 'AUS_DEM',
+  scale: 30,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});

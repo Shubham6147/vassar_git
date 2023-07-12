@@ -1,0 +1,59 @@
+//var Tamilnadu_KTCC = ee.FeatureCollection("projects/ee-shubhampawar/assets/blockboundaries_wb").geometry().bounds()
+
+//ee.FeatureCollection("users/shubhampawar/Tamilnadu_KTCC_District_boundary_dissolve");
+
+var startDate = ee.Date('2019-01-01');
+var endDate = ee.Date('2022-12-31');
+
+var bound_FC = ee.FeatureCollection("projects/ee-shubhampawar/assets/haryana_district_shapefile")
+
+var district_list = bound_FC.aggregate_array('Name')
+
+var district_list_size = district_list.size().getInfo();
+
+print(district_list)
+
+for (var j = 0 ; j < district_list_size ; j++){
+
+  var nam = district_list.get(j).getInfo();
+  print(j)
+  var Tamilnadu_KTCC = bound_FC.filter(ee.Filter.equals('Name', nam)).geometry()
+
+
+
+
+  var dwcol_mode = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1')
+              .filterDate(startDate, endDate)
+              .filterBounds(Tamilnadu_KTCC)
+              //.select(['water', 'trees', 'grass', 'flooded_vegetation', 'crops',
+              //          'shrub_and_scrub', 'built', 'bare'])
+              .select(['crops'])
+              .reduce(ee.Reducer.median())
+              .clip(Tamilnadu_KTCC)
+              .multiply(100)
+              .toInt16()
+              //.visualize({min: 0, max: 8, palette: VIS_PALETTE});
+  
+  //print(dwcol_mode)
+  //Map.addLayer(dwcol_mode)
+  
+  
+  var fd_name = 'HR_Crop_pro_stack'//_'+ j
+
+  var fileName = 'Crop_HR_district_2021-22_'+ nam
+  
+  Export.image.toDrive({
+    image: dwcol_mode.clip(Tamilnadu_KTCC),
+    folder : fd_name,
+    description: fileName,
+    fileNamePrefix: fileName,
+    region: Tamilnadu_KTCC, 
+    scale: 10,
+    crs: 'EPSG:4326',
+    maxPixels: 1.0E13,
+    fileFormat: 'GeoTIFF',
+    formatOptions: {cloudOptimized: true},
+    skipEmptyTiles: true
+  });
+  
+}

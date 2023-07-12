@@ -1,0 +1,209 @@
+
+//var bound_FC = ee.FeatureCollection("users/shubhampawar/godavari_ts_remaining_corrected");
+//var bound_FC = ee.FeatureCollection("projects/ee-shubhampawar/assets/jhajjar_dict")
+var bound_FC = ee.FeatureCollection("users/shubhampawar/yamunanagar_aoi_buffer5km")
+
+var roi = ee.FeatureCollection(bound_FC).geometry()
+
+Map.addLayer(roi)
+Map.centerObject(roi,10)
+
+var startDate = ee.Date('2021-11-15');
+var endDate = ee.Date('2022-04-30');
+
+var batch = require('users/fitoprincipe/geetools:batch')
+
+
+// ------ Functions -----------
+
+// creating empty image
+var empty_img = ee.Image();
+// matching the datatype of empty image to exported stack collection
+var empty_img_int16 = empty_img.toInt16();
+//print('empty_img_int16', empty_img_int16 );
+
+// checking for number of bands
+var count = empty_img_int16.bandNames().size();
+//print('count', count );
+
+// Function for checking image with band less than 1, and replacing it with empty band
+var onebandcount = function(image) {
+  return ee.Algorithms.If(ee.Number(image.bandNames().length()).lt(1),
+                          image.addBands(empty_img_int16), image);
+                          
+};
+
+
+// function for cloud masking
+function maskCloudAndShadows(image) {
+  var cloudProb = image.select('MSK_CLDPRB');
+  var snowProb = image.select('MSK_SNWPRB');
+  var cloud = cloudProb.lt(5);
+  var snow = snowProb.lt(5);
+  var scl = image.select('SCL'); 
+  var shadow = scl.eq(3); // 3 = cloud shadow
+  var cirrus = scl.eq(10); // 10 = cirrus
+  // Cloud probability less than 5% or cloud shadow classification
+  var mask = (cloud.and(snow)).and(cirrus.neq(1)).and(shadow.neq(1));
+  return image.updateMask(mask);
+}
+
+
+
+/*
+// compute MSAVI2 using expression
+var msavi2 = composite.expression(
+  '(2 * NIR + 1 - sqrt(pow((2 * NIR + 1), 2) - 8 * (NIR - RED)) ) / 2', 
+  {
+    'NIR': composite.select('B8'), 
+    'RED': composite.select('B4')
+  }
+);
+*/
+// // Calculate NDVI.
+// var calculateNDVI = function(scene) {
+//   // get a string representation of the date.
+//   var dateString = ee.Date(scene.get('system:time_start')).format('yyyy-MM-dd');
+//   var ndvi = scene.normalizedDifference(['B8', 'B4']);
+//   var ndvi2 = ndvi.multiply(10000).toInt16();
+//   return ndvi2.rename(dateString);
+// };
+
+// NDVI - 'B8', 'B4'
+// NDMI - 'B8', 'B11'
+//
+
+var addNDVI = function(image) {
+  var ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI');
+  return image.addBands(ndvi.multiply(10000).toInt16());
+};
+
+var stackCollection = function(collection) {
+  // Create an initial image.
+  var first = ee.Image(collection.first()).select([]);
+
+  // Write a function that appends a band to an image.
+  var appendBands = function(image, previous) {
+    return ee.Image(previous).addBands(image);
+  };
+  return ee.Image(collection.iterate(appendBands, first));
+};
+
+//----------------- end functon ---------------
+
+// Define an example collection.
+var NDVI_collection = ee.ImageCollection('COPERNICUS/S2_SR')
+                  //.filter(ee.Filter.eq('MGRS_TILE', '44QPF')) //44QQG, 44QQF, 44QPF, 44QPG
+                  .filterDate(startDate, endDate)
+                  .filterBounds(roi)
+                  //.filter(ee.Filter.lt('CLOUD_COVERAGE_ASSESSMENT', 10))
+                  //.map(maskCloudAndShadows)
+                  .map(addNDVI);
+                   
+print(NDVI_collection);
+
+//Map.addLayer(collection)
+
+
+// Difference in days between start and finish
+var diff = endDate.difference(startDate, 'day');
+print(diff)
+
+// Make a list of all dates
+var range = ee.List.sequence(0, diff.subtract(1), 10).map(function(day){return startDate.advance(day,'day')});
+print(range);
+
+// Funtion for iteraton over the range of dates
+var ten_day_max_mosaics = function(date, newlist) {
+  // Cast
+  date = ee.Date(date);
+  
+  //var d_milli = ee.Date(date.millis());
+  var d_milli = date.millis();
+  newlist = ee.List(newlist);
+
+  // Filter collection between date and the next day
+  var filtered = NDVI_collection.filterDate(date, date.advance(10,'day')).select('NDVI').set('system:time_start',d_milli);//.format('yyyy-MM-dd')
+
+  // Make the mosaic
+  var image = ee.Image(filtered.reduce(ee.Reducer.max()).clip(roi)).set('system:time_start',d_milli)//.format('yyyy-MM-dd')//.rename(ee.String('NDVI_').cat(d_milli.format('yyyy-MM-dd')));
+
+  // Add the mosaic to a list only if the collection has images
+  //return ee.List(ee.Algorithms.If(filtered.size(), newlist.add(image), newlist));
+  return ee.List(newlist.add(image));
+  
+};
+
+// Iterate over the range to make a new list, and then cast the list to an imagecollection
+var newcol = ee.ImageCollection(ee.List(range.iterate(ten_day_max_mosaics, ee.List([]))));
+print(newcol);
+
+
+
+var final_col = newcol.map(onebandcount);
+
+var date_list1 = final_col.reduceColumns(ee.Reducer.toList(), ["system:time_start"]).get('list').getInfo();
+ 
+print(date_list1);
+
+
+
+var num_date = final_col.size().getInfo();
+print(num_date);
+
+var NDVI_stack = stackCollection(final_col);
+
+print(final_col)
+
+var max_ndvi = final_col.reduce(ee.Reducer.max())
+
+var sd_ndvi = final_col.reduce(ee.Reducer.stdDev())
+
+var mean_ndvi = final_col.reduce(ee.Reducer.mean())
+
+print(max_ndvi)
+
+// Export Sentinel VH VV image as TIFF file 
+Export.image.toDrive({
+  image: max_ndvi, 
+  description: "YM_NDVI_Max",
+  fileNamePrefix:  "YM_NDVI_Max",
+  region: roi, 
+  folder: 'YM_paper_paddy',
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});
+
+
+// Export Sentinel VH VV image as TIFF file 
+Export.image.toDrive({
+  image: sd_ndvi, 
+  description: "YM_NDVI_SD",
+  fileNamePrefix:  "YM_NDVI_SD",
+  region: roi, 
+  folder: 'YM_paper_paddy',
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});
+
+
+// Export Sentinel VH VV image as TIFF file 
+Export.image.toDrive({
+  image: mean_ndvi, 
+  description: "YM_NDVI_Mean",
+  fileNamePrefix:  "YM_NDVI_Mean",
+  region: roi, 
+  folder: 'YM_paper_paddy',
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF'
+});
+
+
+
+

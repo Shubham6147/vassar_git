@@ -1,0 +1,507 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var GT_point = ee.FeatureCollection("users/saptarshi/Jagtial_GT_point"),
+    geometry = 
+    /* color: #0b4a8b */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[78.64431707211298, 18.880286730715614],
+          [78.64431707211298, 18.87620574191017],
+          [78.64942399807734, 18.87620574191017],
+          [78.64942399807734, 18.880286730715614]]], null, false),
+    TG_s1 = ee.FeatureCollection("users/saptarshi/TG_S1"),
+    RS = ee.FeatureCollection("projects/ee-saptarshi/assets/Ranganayaka_sagar"),
+    geometry2 = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[79.07433307429774, 18.602818737754568],
+          [78.70629108211024, 17.827969081353633],
+          [78.81340778132899, 17.827969081353633],
+          [79.17321002742274, 18.60542179843371]]]),
+    NZ = ee.FeatureCollection("projects/ee-saptarshi/assets/Nizam_sagar"),
+    SNG = ee.FeatureCollection("projects/ee-saptarshi/assets/Singur"),
+    SYP = ee.FeatureCollection("projects/ee-saptarshi/assets/SYP"),
+    SRSP_S1 = ee.FeatureCollection("projects/ee-saptarshi/assets/SRSP_s1"),
+    LMD_s1 = ee.FeatureCollection("projects/ee-saptarshi/assets/LMD_S1"),
+    INDRM = ee.FeatureCollection("projects/ee-saptarshi/assets/Indiramma"),
+    geometry3 = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[79.06743447194337, 19.641716392623067],
+          [77.68315712819337, 15.706772345230545],
+          [77.85893837819337, 15.791363516680006],
+          [79.17729775319337, 19.631368992956936]]]),
+    OD_S1_left = ee.FeatureCollection("users/saptarshi/Odisha_S1_left"),
+    OD_S1_middle = ee.FeatureCollection("users/saptarshi/Odisha_S1_middle"),
+    OD_S1_right = ee.FeatureCollection("users/saptarshi/Odisha_s1_right"),
+    OD_S1_left_path = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[83.03878679223364, 22.648293545976088],
+          [82.24777116723364, 17.7422076227749],
+          [82.92892351098364, 17.763133975877697],
+          [83.74191179223364, 22.688844066568613]]]),
+    OD_S1_middle_path = /* color: #0b4a8b */ee.Geometry.Polygon(
+        [[[85.27999772973364, 22.749647351538783],
+          [84.46700944848364, 18.598154055203825],
+          [85.06027116723364, 18.702248242188656],
+          [85.74142351098364, 22.810423591221124]]]),
+    OD_S1_right_path = /* color: #ffc82d */ee.Geometry.Polygon(
+        [[[86.86202897973364, 22.587445311089603],
+          [86.37863054223364, 19.718938591734243],
+          [86.84005632348364, 19.822325884048922],
+          [87.10372819848364, 22.5671565867952]]]),
+    OD_Command = ee.FeatureCollection("projects/ee-saptarshi/assets/Odisha_Major_Ayacut_S1_S2"),
+    OD_Command_new = ee.FeatureCollection("projects/ee-saptarshi/assets/Odisha_Major_Ayacut_buffer1km_duplicate_update");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+var OD_Command_new = ee.FeatureCollection("projects/ee-shubhampawar/assets/Odisha_Major_Ayacut_buffer1km_duplicate_update")
+
+var roi111 = ee.FeatureCollection(OD_S1_right);
+
+//Export.table.toDrive({
+//  collection: roi111,
+//  fileNamePrefix: 'OD_S1_right',
+//  description:'OD_S1_right',
+//  folder: 'OD_Command',
+//  fileFormat: 'SHP'
+//});
+
+
+//Map.addLayer(OD_S1_left);
+//Map.addLayer(OD_S1_middle);
+//Map.addLayer(OD_S1_right);
+//Map.centerObject(OD_S1_left);
+/*
+
+var roikk = ee.FeatureCollection(new_point_90m).filter(ee.Filter.eq('segment', 3 ));
+
+
+var roi1kk = ee.FeatureCollection(roikk).aggregate_array('S_ID');
+
+
+var sort_roi = roikk.sort('S_ID').aggregate_array('S_ID');
+
+
+  
+print('roi1',roi1kk);
+
+
+print('sort_roi', sort_roi);
+  
+var sizekk = roi1kk.size();
+
+
+print('size', sizekk);
+
+*/
+
+function terrainCorrection(image) { 
+  var imgGeom = image.geometry();
+  var srtm = ee.Image('USGS/SRTMGL1_003').clip(imgGeom); // 30m srtm 
+  var sigma0Pow = ee.Image.constant(10).pow(image.divide(10.0));
+
+
+  // Article ( numbers relate to chapters) 
+  // 2.1.1 Radar geometry 
+  var theta_i = image.select('angle');
+  var phi_i = ee.Terrain.aspect(theta_i)
+    .reduceRegion(ee.Reducer.mean(), theta_i.get('system:footprint'), 1000)
+    .get('aspect');
+
+
+  // 2.1.2 Terrain geometry
+  var alpha_s = ee.Terrain.slope(srtm).select('slope');
+  var phi_s = ee.Terrain.aspect(srtm).select('aspect');
+
+
+  // 2.1.3 Model geometry
+  // reduce to 3 angle
+  var phi_r = ee.Image.constant(phi_i).subtract(phi_s);
+
+
+  // convert all to radians
+  var phi_rRad = phi_r.multiply(Math.PI / 180);
+  var alpha_sRad = alpha_s.multiply(Math.PI / 180);
+  var theta_iRad = theta_i.multiply(Math.PI / 180);
+  var ninetyRad = ee.Image.constant(90).multiply(Math.PI / 180);
+
+
+  // slope steepness in range (eq. 2)
+  var alpha_r = (alpha_sRad.tan().multiply(phi_rRad.cos())).atan();
+
+
+  // slope steepness in azimuth (eq 3)
+  var alpha_az = (alpha_sRad.tan().multiply(phi_rRad.sin())).atan();
+
+
+  // local incidence angle (eq. 4)
+  var theta_lia = (alpha_az.cos().multiply((theta_iRad.subtract(alpha_r)).cos())).acos();
+  var theta_liaDeg = theta_lia.multiply(180 / Math.PI);
+  // 2.2 
+  // Gamma_nought_flat
+  var gamma0 = sigma0Pow.divide(theta_iRad.cos());
+  var gamma0dB = ee.Image.constant(10).multiply(gamma0.log10());
+  var ratio_1 = gamma0dB.select('VV').subtract(gamma0dB.select('VH'));
+
+
+  // Volumetric Model
+  var nominator = (ninetyRad.subtract(theta_iRad).add(alpha_r)).tan();
+  var denominator = (ninetyRad.subtract(theta_iRad)).tan();
+  var volModel = (nominator.divide(denominator)).abs();
+
+
+  // apply model
+  var gamma0_Volume = gamma0.divide(volModel);
+  var gamma0_VolumeDB = ee.Image.constant(10).multiply(gamma0_Volume.log10());
+
+
+  // we add a layover/shadow maskto the original implmentation
+  // layover, where slope > radar viewing angle 
+  var alpha_rDeg = alpha_r.multiply(180 / Math.PI);
+  var layover = alpha_rDeg.lt(theta_i);
+
+
+  // shadow where LIA > 90
+  var shadow = theta_liaDeg.lt(85);
+
+
+  // calculate the ratio for RGB vis
+  var ratio = gamma0_VolumeDB.select('VV').subtract(gamma0_VolumeDB.select('VH'));
+
+
+  var output = gamma0_VolumeDB.addBands(ratio).addBands(alpha_r).addBands(phi_s).addBands(theta_iRad)
+    .addBands(layover).addBands(shadow).addBands(gamma0dB).addBands(ratio_1);
+
+
+  return image.addBands(
+    output.select(['VV', 'VH'], ['VV', 'VH']),
+    null,
+    true
+  );
+}
+
+
+
+
+//===============================Layerstack Function=======================================================
+
+
+var stackCollection = function(collection) {
+  // Create an initial image.
+    var first = ee.Image(collection.first()).select([]);
+
+
+  // Write a function that appends a band to an image.
+    var appendBands = function(image, previous) {
+      return ee.Image(previous).addBands(image);
+    };
+    return ee.Image(collection.iterate(appendBands, first));
+};
+
+
+//================================Band_count Function======================================================================
+
+
+var band_count = function(image) {
+  return ee.Algorithms.If(ee.Number(image.bandNames().length()).gt(2),
+                          image, null);
+                          
+};
+
+
+//=================================BandCount_two_Function======================================
+
+
+var twobandcount = function(image) {
+  return ee.Algorithms.If(ee.Number(image.bandNames().length()).gte(2),
+                          image, null);
+                          
+};
+//================================= newcoll bypixel ==========================================================
+
+
+var newcoll_VV_bypixel = function(image) {
+  
+  var count = image.select('VV').reduceRegion(ee.Reducer.sum(), roi1, 10).values().get(0);
+  
+  return image.set({pixel_count: count})
+
+
+};
+
+
+
+
+var newcoll_VH_bypixel = function(image) {
+  
+  var count = image.select('VH').reduceRegion(ee.Reducer.sum(), roi1, 10).values().get(0);
+  
+  return image.set({pixel_count: count})
+
+
+};
+
+
+//==============================================================================
+
+// for loop over each segment.
+
+
+var pass_direction = "DESCENDING";
+//var pass_direction = "ASCENDING";
+
+//var start_date = '2022-06-08';//var end_date = '2020-11-10';
+
+
+var start_date = '2021-06-01';
+var end_date = '2022-05-31';
+
+var roi = ee.FeatureCollection(geometry3);
+//var path = ee.FeatureCollection(geometry3);
+
+var collection= ee.ImageCollection('COPERNICUS/S1_GRD')
+      .filter(ee.Filter.eq('instrumentMode','IW'))
+    //.filter(ee.Filter.listContains('transmitterReceiverPolarisation', polarization))
+      .filter(ee.Filter.eq('orbitProperties_pass',pass_direction)) 
+      .filter(ee.Filter.eq('resolution_meters',10))
+    //.filter(ee.Filter.eq('relativeOrbitNumber_start',relative_orbit ))
+      .filterMetadata('transmitterReceiverPolarisation', 'equals', ['VV', 'VH'])
+      .filterBounds(roi)
+      .filterDate(start_date, end_date);
+
+print(collection);
+
+var roi3 = ee.FeatureCollection(OD_S1_left_path);
+var roi2 = ee.FeatureCollection(OD_S1_middle_path);
+var roi1 = ee.FeatureCollection(OD_S1_right_path);
+//var roi4 = ee.FeatureCollection(SYP);
+//var roi5 = ee.FeatureCollection(SRSP_S1);
+
+var LIS_list = ee.List(['OD_S1_right', 'OD_S1_middle', 'OD_S1_left']);
+var roi_list = ee.List([roi1, roi2, roi3]);
+var roi_len = roi_list.size().getInfo();
+
+
+for (var j = 0 ; j < roi_len ; j++){
+  var jj = j+1
+  if (jj ==1){
+//right path
+// rename selected geometry feature 
+    var name_list = ee.List(['Subarnarekah', 'Anandapur', 'Salandi', 'Baitarani', 'Mahanadi Delta_1', 'Mahanadi Delta_2_split']);
+  }
+  else if (jj ==2){
+    var name_list = ee.List(['Rengali',  'Salki_split', 'Rushikulya_2', 'Rushikulya_1', 'Mahanadi Delta_2']);
+  }
+  else{
+    var name_list = ee.List(['Hirakud_1', 'Hirakud_2', 'Salki', 'Lower Indra', 'Upper Indravati_2', 'Upper Indravati_1', 'Upper Kolab', 'Potteru']);
+  }
+    
+  var roi = ee.FeatureCollection(roi_list.get(j));
+  var roi_name = LIS_list.get(j).getInfo();
+  print(roi_name);
+  
+  
+
+
+
+  //var roi = ee.FeatureCollection(new_point_90m)
+              //.filter(ee.Filter.eq('segment', i));
+             // .filter(ee.Filter.gte('S_ID', 698 ))
+            //  .filter(ee.Filter.lte('S_ID', 719));
+  //var roi = ee.FeatureCollection(geometry);
+  
+    //------------------------------- DATA SELECTION & PREPROCESSING --------------------------//
+    // Load and filter Sentinel-1 GRD data by predefined parameters 
+  var collection= ee.ImageCollection('COPERNICUS/S1_GRD')
+      .filter(ee.Filter.eq('instrumentMode','IW'))
+    //.filter(ee.Filter.listContains('transmitterReceiverPolarisation', polarization))
+      .filter(ee.Filter.eq('orbitProperties_pass',pass_direction)) 
+      .filter(ee.Filter.eq('resolution_meters',10))
+    //.filter(ee.Filter.eq('relativeOrbitNumber_start',relative_orbit ))
+      .filterMetadata('transmitterReceiverPolarisation', 'equals', ['VV', 'VH'])
+      .filterBounds(roi)
+      .filterDate(start_date, end_date);
+     // .filterDate(st_date, end_date);
+    //.select(polarization);
+  
+  print('Image  collection' , collection);
+  
+ // var collection_refined = ee.List([]);
+  var col_length = collection.size().getInfo();
+  print('collection size ' , col_length);
+
+
+  var terrain_cor_col = collection.map(terrainCorrection);
+  //print('terrain_cor_col', terrain_cor_col);
+  var terrain_cor_col_size = terrain_cor_col.size().getInfo();
+  print('terrain_cor_col_size', terrain_cor_col_size);
+
+
+  var range = terrain_cor_col.reduceColumns(ee.Reducer.minMax(), ["system:time_start"])
+  var startDate = ee.Date(ee.Date(range.get('min')).format('yyyy-MM-dd').getInfo());
+  print('startDate', startDate);
+  var endDate = ee.Date(ee.Date(range.get('max')).advance(1,'day').format('yyyy-MM-dd').getInfo());
+  print('endDate', endDate);
+  
+  // Difference in days between start and finish
+  var diff = endDate.difference(startDate, 'day');
+  
+  //print('diff', diff);
+  
+  // Make a list of all dates
+  var range = ee.List.sequence(0, diff.subtract(1), 12).map(function(day){return startDate.advance(day,'day')});
+  print('range',range);
+  
+  //===============================Day-wise mosaicFunction=======================================================
+  var day_mosaics = function(date, newlist) {
+    // Cast
+    date = ee.Date(date);
+    
+    var d_milli = ee.Date(date.millis());
+    newlist = ee.List(newlist);
+  
+    // Filter collection between date and the next day
+    var filtered = terrain_cor_col.filterDate(date, date.advance(1,'day')).select('VV', 'VH').set('system:time_start',d_milli.format('yyyy-MM-dd'));
+    //---if len(filtered) > 1:
+      // then do mosaic
+      //else add image to newlist
+    var filtered_col_size = filtered.size();
+    
+    var check_coll = ee.Image(collection.toList(filtered_col_size).get(0));
+      //print('check_coll',check_coll);
+    var check_coll_bandcount = check_coll.bandNames().length(); 
+    
+    if (ee.Number(filtered_col_size).gt(1)){
+    
+    // Make the mosaic
+      var image = ee.Image(filtered.mosaic()).set('system:time_start',d_milli.format('yyyy-MM-dd'));
+    //.rename(ee.String('VV_').cat(d_milli.format('yyyy-MM-dd')));
+    // Add the mosaic to a list only if the collection has images
+      return ee.List(newlist.add(image));
+    } else if (ee.Number(check_coll_bandcount).gt(0)) {
+      return ee.List(newlist.add(ee.Image(filtered)));
+    }
+  };
+  
+  //do masaic here after checking image count within mosaic function
+  //var mosacked_collection = 
+  
+  var refined_coll_mosaic = ee.ImageCollection(ee.List(range.iterate(day_mosaics, ee.List([]))));
+  print('new_coll_latest',refined_coll_mosaic);
+  
+  
+  
+  //var smoothing_radius = 30;
+  //var Mosaic_smooth = terrain_cor_col.focal_mean(smoothing_radius, 'square', 'meters');
+
+
+  var new_coll_mosaic =  ee.ImageCollection(refined_coll_mosaic.map(twobandcount, true));
+  print('refined_coll_mosaic', new_coll_mosaic);
+
+  var roi2 = roi; //ee.FeatureCollection(roi).aggregate_array('S_ID')
+  
+  //print('roi2',roi2);
+  
+  var size = roi2.size().getInfo();
+
+
+  //for (var k = 1 ; k < 2 ; k++){
+  /*  
+    var roi1 = roi.filter(ee.Filter.eq('S_ID', roi2.get(k)));
+    var S_ID = roi2.get(k).getInfo();
+    print('Current S_ID',S_ID);
+    
+    var roi_filter_col = new_coll_mosaic.filterBounds(roi1); //pass mosaic data here
+    //print("terain collection count:", roi_filter_col);
+    
+    //===================================================================
+    
+    var newcolllist_VV = roi_filter_col.map(newcoll_VV_bypixel);
+    //print('newcolllist_VV', newcolllist_VV );
+    
+    //print('Number of pixelscounts for all VV images:', newcolllist_VV.aggregate_array('pixel_count'))
+
+
+    var newcolllist_VH = roi_filter_col.map(newcoll_VH_bypixel);
+    //print('newcolllist_VH', newcolllist_VH );
+
+
+    //print('Number of pixelscounts for all VH images:', newcolllist_VH.aggregate_array('pixel_count'))
+
+
+    
+    var fil_coll_VV = newcolllist_VV.select('VV').filter(ee.Filter.lt('pixel_count' , 0.0));
+    var fil_coll_VH = newcolllist_VH.select('VH').filter(ee.Filter.lt('pixel_count' , 0.0));
+
+
+    //print('fil_coll_VV', fil_coll_VV);
+    //print('fil_coll_VH', fil_coll_VH);
+
+
+    // keep all pixel value less than 0.
+ */
+    var date_list = new_coll_mosaic.reduceColumns(ee.Reducer.toList(), ["system:time_start"]).get('list').getInfo();
+    print('date_list', date_list);
+
+
+   // var VV_stack = stackCollection(new_coll_mosaic.select('VV'));
+    //print('VV_stack', VV_stack);
+  
+    var VH_stack = stackCollection(new_coll_mosaic.select('VH'));
+    print('VH_stack', VH_stack);
+    
+    //var roi2 = ee.FeatureCollection(RS);
+  var sd = ee.List(date_list).get(0).getInfo();
+  print('sd', sd);
+  var ed = ee.List(date_list).get(-1).getInfo();
+  print('ed', ed);
+  
+var name_len = name_list.size().getInfo();
+
+for (var i = 0 ; i < name_len ; i++){
+//for (var j = 0 ; j < 1 ; j++){
+var nam = name_list.get(i).getInfo();
+ var aoi = ee.FeatureCollection(OD_Command_new).filter(ee.Filter.eq('Project__1', nam));
+ Map.addLayer(aoi);
+
+  /*
+  // Export Sentinel VV image as TIFF file 
+  Export.image.toDrive({
+    image: VV_stack.multiply(100).clip(roi).toInt16(), 
+    description: 'TG_left_path_VV_' + pass_direction,
+    fileNamePrefix: 'TG_left_path_VV_' + pass_direction + '_10m_16bit',
+    region: roi,
+    folder: 'TG_S1_' + pass_direction,
+    scale: 10,
+    crs: 'EPSG:4326',
+    maxPixels: 1.0E13,
+    fileFormat: 'GeoTIFF'
+  });
+  */
+  //Export Sentinel VH  image as TIFF file    
+  Export.image.toDrive({
+    image: VH_stack.multiply(100).clip(aoi).toInt16(), 
+    description: roi_name + '_' + nam + '_VH_stack_' + sd + '_' + ed,
+    fileNamePrefix:  roi_name + '_' + nam + '_VH_stack_' + sd + '_' + ed + '_10m_16bit',
+    region: aoi,
+    folder: 'TG_command',
+    scale: 10,
+    crs: 'EPSG:4326',
+    maxPixels: 1.0E13,
+    fileFormat: 'GeoTIFF'
+  });
+}
+  var featureCollection = ee.FeatureCollection(date_list
+                          .map(function(element){
+                          return ee.Feature(null,{prop:element})}));
+  
+  //print('featureCollection_dates',featureCollection);
+  
+  Export.table.toDrive({
+      collection: featureCollection,
+      description: roi_name + '_' + sd + '_' + ed + '_csv',
+      fileNamePrefix: roi_name + '_' + sd + '_' + ed,
+      folder: 'TG_command',
+      fileFormat: 'CSV'
+  });
+  
+  }
+

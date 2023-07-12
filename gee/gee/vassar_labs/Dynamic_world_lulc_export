@@ -1,0 +1,44 @@
+var dwVisParams = {
+  min: 0,
+  max: 8,
+  palette: [
+    '#419BDF', '#397D49', '#88B053', '#7A87C6', '#E49635', '#DFC35A',
+    '#C4281B', '#A59B8F', '#B39FE1'
+  ]
+};
+
+var startDate = ee.Date('2023-01-04');
+var endDate = ee.Date('2023-04-30');
+
+var aoi = ee.FeatureCollection("projects/ee-shubhampawar/assets/aus_north_part1").geometry()
+            //.filter(ee.Filter.equals('District', 'MALKANGIRI')).geometry().buffer(1000)
+
+var dwcol_mode = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1')
+            .filterDate(startDate, endDate)
+            .filterBounds(aoi)
+            //.select(['water', 'trees', 'grass', 'flooded_vegetation', 'crops',
+            //          'shrub_and_scrub', 'built', 'bare'])
+            .select(['label'])
+            .reduce(ee.Reducer.mode())
+            .clip(aoi)
+            //.visualize({min: 0, max: 8, palette: VIS_PALETTE});
+            
+Map.addLayer(dwcol_mode, dwVisParams, 'DYNAMIC LULC')            
+
+var fd_name = 'AUS_DEM'
+var fileName = 'AUS_North_1_Dynamic_world_lulc_april_2023_mode'
+
+Export.image.toDrive({
+  image: dwcol_mode.clip(aoi),
+  folder : fd_name,
+  description: fileName,
+  fileNamePrefix: fileName,
+  region: aoi, 
+  scale: 10,
+  crs: 'EPSG:4326',
+  maxPixels: 1.0E13,
+  fileFormat: 'GeoTIFF',
+  formatOptions: {cloudOptimized: true},
+  skipEmptyTiles: true
+});
+

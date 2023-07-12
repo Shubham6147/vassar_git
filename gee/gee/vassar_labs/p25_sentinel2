@@ -1,0 +1,42 @@
+// create a geometry
+// var aoi = ee.Geometry.Polygon(
+//         [[[80.00181916312134, 26.81821791334977],
+//           [80.00181916312134, 26.18406230726866],
+//           [80.69258454398071, 26.18406230726866],
+//           [80.69258454398071, 26.81821791334977]]], null, false);
+
+
+var aoi = ee.FeatureCollection("projects/ee-shubhampawar/assets/GANS_AOI")
+// Create two S2 collections for MX and SLC product
+var date = ee.Date('2022-02-01')
+
+var s2_l1_image = ee.ImageCollection('COPERNICUS/S2')
+                .filterBounds(aoi)
+                .filterDate(date, date.advance(30, 'days'))
+                .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', 30))
+                .sort('CLOUDY_PIXEL_PERCENTAGE', false)
+                .select(['B2', 'B3', 'B4'])
+                .reduce(ee.Reducer.percentile([25]))
+                .round().toUint16().clip(aoi)
+
+var s2_vis = {
+  min: 0,
+  max: 3000,
+  bands: ['B4_p25', 'B3_p25', 'B2_p25'],
+};
+
+Map.addLayer(aoi, {}, 'Kanpur', false)
+Map.addLayer(s2_l1_image, s2_vis, 'S2 L2 India')
+
+Map.centerObject(aoi, 10)
+
+// Export the 10m MX image
+Export.image.toDrive({
+  image: s2_l1_image.select(['B2_p25', 'B3_p25', 'B4_p25']),
+  description: 'GANS_AOI_b234',
+  folder: 'GANS_AOI',
+  scale: 10, 
+  region: aoi,
+  maxPixels: 10e11,
+  crs: 'EPSG:4326'
+});

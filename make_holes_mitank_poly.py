@@ -26,7 +26,7 @@ def groupby_multipoly(df, by, aggfunc="first"):
     return aggregated
 
 
-gpd_shp = gpd.read_file("F:/ODISHA_MITANK_V4/OD_depth_20230217.shp")
+gpd_shp = gpd.read_file("F:/ODISHA_MITANK_V4/sentinel1_OD_20230704.shp")
 gpd_shp = gpd_shp.set_geometry('geometry')
 gpd_shp_s1 = gpd_shp[gpd_shp['SOURCE'] == 'SENTINEL_1']
 gpd_shp_s1_dem = gpd_shp[gpd_shp['SOURCE'] == 'SENTINEL1_DEM']
@@ -103,5 +103,5 @@ new_gdf.set_geometry('geometry', inplace = True)
 
 
 
-new_gdf.to_file("F:/ODISHA_MITANK_V4/gpkg/OD_depth_20230217_mod.gpkg", "GPKG")
+new_gdf.to_file("F:/ODISHA_MITANK_V4/gpkg/sentinel1_OD_20230704_mod.gpkg", "GPKG")
 

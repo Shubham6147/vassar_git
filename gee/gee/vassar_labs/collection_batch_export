@@ -1,0 +1,40 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[79.94826909609374, 13.335571321269956],
+          [79.94826909609374, 12.765662508986741],
+          [80.43166753359374, 12.765662508986741],
+          [80.43166753359374, 13.335571321269956]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var batch = require('users/fitoprincipe/geetools:batch')
+
+var sentinel1 = ee.ImageCollection("COPERNICUS/S1_GRD")
+                .filterBounds(geometry)
+                //.filterDate()
+                
+
+
+// // Load Landsat 8 imagery and filter it  
+// var collection = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
+//           .filter(ee.Filter.eq('WRS_PATH', 33))
+//           .filter(ee.Filter.eq('WRS_ROW', 41))
+//           .set('SENSOR_ID', 'OLI_TIRS')
+//           .sort("CLOUD_COVER", false);
+          
+var count = sentinel1.size()
+print("Coleccion", count)
+
+//some more code here to maskclouds and clip to myregion
+
+
+// export collection to google drive
+batch.Download.ImageCollection.toDrive(sentinel1, 'Sentinel1', {
+  scale: 10,
+  region: geometry // or geometry.getInfo()
+})
