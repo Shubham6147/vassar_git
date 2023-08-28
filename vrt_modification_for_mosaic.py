@@ -28,4 +28,5 @@ def average(in_ar, out_ar, xoff, yoff, xsize, ysize, raster_xsize,raster_ysize, 
         else:
             w.write(lines[k])
         
-
+#gdalwarp -srcnodata 0.0 -dstnodata 0.0 --config GDAL_VRT_ENABLE_PYTHON YES -r near -multi -wo "NUM_THREADS=ALL_CPUS" -co "COMPRESS=LZW" -co "BIGTIFF=YES" mosaic.vrt mosaic.tif
+#--config GDAL_VRT_ENABLE_PYTHON YES
